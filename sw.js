@@ -1,6 +1,6 @@
 /* Denní pohyb — offline cache.
    Po každé úpravě souborů zvyš číslo verze, jinou změnu dělat nemusíš. */
-const VERZE = 'pohyb-v1';
+const VERZE = 'pohyb-v2';
 const SOUBORY = [
   './',
   './index.html',
