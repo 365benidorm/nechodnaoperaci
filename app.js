@@ -3,7 +3,7 @@
    Sem vlož adresu nasazené Apps Script webové aplikace (viz apps-script.gs).
    Necháš-li prázdné, appka funguje normálně, jen se nic neodesílá.
    ========================================================================== */
-const SYNC_URL = "https://script.google.com/macros/s/AKfycbzQuEOFL1Jy9sCt5-x-MYCXobG8pupvOMnoxFSB3IsU0Utp-Qd2VOKtj69tgKdhxbkc/exec";
+const SYNC_URL = "";
 const KDO = "Máma";
 
 /* ========================== ÚLOŽIŠTĚ ==================================== */
@@ -133,8 +133,8 @@ const app = document.getElementById('app');
 const bar = document.getElementById('bar');
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-function lista(titulek, zpet) {
-  bar.innerHTML = (zpet ? `<button class="back" onclick="location.hash='${zpet}'">‹ Zpět</button>` : '')
+function lista(titulek, zpet, popisek) {
+  bar.innerHTML = (zpet ? `<button class="back" onclick="location.hash='${zpet}'">‹ ${esc(popisek || 'Zpět')}</button>` : '')
     + `<div class="t">${esc(titulek)}</div>`;
 }
 
@@ -218,7 +218,7 @@ function viewLekce() {
   if (!SES) { zacniLekci(); return; }
   if (SES.idx >= SES.list.length) return viewHotovo();
   const c = SES.list[SES.idx];
-  lista(`${SES.idx + 1} z ${SES.list.length}`, '#/');
+  lista(`${SES.idx + 1} z ${SES.list.length}`, '#/', 'Ukončit');
   stopTik();
   SES.zbylo = trvaniS(c);
   SES.opak = 0;
@@ -248,7 +248,10 @@ function viewLekce() {
 
     <div class="sticky">
       <button class="btn" onclick="dalsi(true)">${SES.idx === SES.list.length - 1 ? 'Hotovo — ukončit lekci' : 'Hotovo — další cvik'}</button>
-      <button class="btn ghost small" onclick="dalsi(false)">Dnes vynechat</button>
+      <div class="row">
+        <button class="btn ghost small" onclick="zpetNaPredchozi()" ${SES.idx === 0 ? 'disabled' : ''}>← Předchozí cvik</button>
+        <button class="btn ghost small" onclick="dalsi(false)">Dnes vynechat</button>
+      </div>
     </div>
   `;
 }
@@ -290,6 +293,29 @@ function pridejOpak(n) {
   if (el) el.textContent = SES.opak + ' z ' + cil;
   if (SES.opak === cil) pip(true);
 }
+function odeber(id) {
+  const l = log(), d = dnes();
+  if (!l[d]) return;
+  const i = l[d].indexOf(id);
+  if (i !== -1) { l[d].splice(i, 1); store.set('log', l); }
+}
+function zpetNaPredchozi() {
+  stopTik();
+  if (!SES || SES.idx === 0) return;
+  SES.idx--;
+  odeber(SES.list[SES.idx].id);   // odškrtnout, ať se dá rozhodnout znovu
+  viewLekce();
+  window.scrollTo(0, 0);
+}
+function zpetKPoslednimu() {
+  const list = aktivni();
+  if (!list.length) { location.hash = '#/'; return; }
+  const idx = list.length - 1;
+  odeber(list[idx].id);
+  POSLANO = null;
+  SES = { list, idx, zbylo: 0, bezi: false, opak: 0 };
+  if (location.hash === '#/lekce') viewLekce(); else location.hash = '#/lekce';
+}
 function dalsi(hotovo) {
   stopTik();
   if (hotovo) zapis(SES.list[SES.idx].id);
@@ -319,6 +345,7 @@ function viewHotovo() {
       Bolest při cvičení má být nanejvýš mírná a do druhého dne má odeznít.
       Když je ráno horší než včera, příště uber — kratší výdrž, méně opakování.</div>
     <button class="btn" onclick="location.hash='#/'">Zpátky na začátek</button>
+    <button class="btn ghost small" onclick="zpetKPoslednimu()">← Vrátit se k poslednímu cviku</button>
   `;
   window.scrollTo(0, 0);
 }
