@@ -3,7 +3,7 @@
    Sem vlož adresu nasazené Apps Script webové aplikace (viz apps-script.gs).
    Necháš-li prázdné, appka funguje normálně, jen se nic neodesílá.
    ========================================================================== */
-const SYNC_URL = "";
+const SYNC_URL = "https://script.google.com/macros/s/AKfycbzQuEOFL1Jy9sCt5-x-MYCXobG8pupvOMnoxFSB3IsU0Utp-Qd2VOKtj69tgKdhxbkc/exec";
 const KDO = "Máma";
 
 /* ========================== ÚLOŽIŠTĚ ==================================== */
