@@ -9,7 +9,7 @@ const KDO = "Máma";
 /* Označení verze. Až budeš něco měnit, přepiš datum — objeví se dole
    v Nastavení a posílá se s každým záznamem do Sheetu, takže na dálku
    poznáš, jestli mamce nová verze skutečně dojela. */
-const VERZE_APP = "2026-07-27b";
+const VERZE_APP = "2026-07-27c";
 
 /* stav automatické aktualizace — musí být deklarované dřív, než poprvé
    proběhne render(), jinak appka spadne na temporal dead zone */
@@ -148,6 +148,17 @@ function pip() {
   odemkniZvuk();
   try { ton(740, 0, 0.28, 0.18); } catch (e) { }
   if (navigator.vibrate) navigator.vibrate(120);
+}
+
+/* cinknutí při KAŽDÉM spuštění časovače — dva stoupající tóny.
+   Záměrně hlubší a kratší než cink() na konci, aby se to nedalo splést. */
+function cinkStart() {
+  odemkniZvuk();
+  try {
+    ton(523.25, 0.00, 0.22, 0.30);
+    ton(698.46, 0.13, 0.30, 0.32);
+  } catch (e) { }
+  if (navigator.vibrate) navigator.vibrate([70, 60, 110]);
 }
 
 /* cinknutí na konci časovače — tři tóny, ať je slyšet i přes místnost */
@@ -391,7 +402,7 @@ function prepniTimer() {
     if (t) { t.textContent = fmt(SES.zbylo); t.classList.remove('done'); }
   }
   SES.bezi = true; b.textContent = 'Pauza';
-  odemkniZvuk();
+  cinkStart();          // zvuk při každém spuštění, i po pauze a po Znovu
   drzObrazovku();
 
   // počítáme podle skutečného času, ne podle počtu tiků — telefon
