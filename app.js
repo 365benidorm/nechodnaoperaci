@@ -9,7 +9,7 @@ const KDO = "Máma";
 /* Označení verze. Až budeš něco měnit, přepiš datum — objeví se dole
    v Nastavení a posílá se s každým záznamem do Sheetu, takže na dálku
    poznáš, jestli mamce nová verze skutečně dojela. */
-const VERZE_APP = "2026-07-27";
+const VERZE_APP = "2026-07-27b";
 
 /* stav automatické aktualizace — musí být deklarované dřív, než poprvé
    proběhne render(), jinak appka spadne na temporal dead zone */
@@ -70,6 +70,7 @@ function trvaniS(c) {
   return (c.opak[b] || 8) * 5;
 }
 function odhadMinut(list) {
+  if (!list.length) return 0;
   const s = list.reduce((a, c) => a + trvaniS(c) + 25, 0);
   return Math.max(5, Math.round(s / 60));
 }
@@ -291,8 +292,10 @@ function viewDomu() {
   app.innerHTML = `
     <div class="hero">
       <div class="d">${DNY[d.getDay()]} ${d.getDate()}. ${MES[d.getMonth()]}</div>
-      <div class="n">${splneno ? 'Dnes máš hotovo' : 'Dnešní lekce'}</div>
-      <div class="s">${list.length} cviků · zhruba ${odhadMinut(list)} minut</div>
+      <div class="n">${list.length === 0 ? 'Není co cvičit' : (splneno ? 'Dnes máš hotovo' : 'Dnešní lekce')}</div>
+      <div class="s">${list.length === 0
+        ? 'Všechny cviky jsou vypnuté v Nastavení.'
+        : list.length + ' ' + (list.length === 1 ? 'cvik' : (list.length < 5 ? 'cviky' : 'cviků')) + ' · zhruba ' + odhadMinut(list) + ' minut'}</div>
       <span class="pill">${tyden()}. týden · blok ${blok()} ze 3</span>
       <div class="streak">${poslednich7().map(x => `<i class="${x ? 'on' : ''}"></i>`).join('')}</div>
     </div>

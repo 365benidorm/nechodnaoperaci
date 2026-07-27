@@ -58,8 +58,9 @@ a{color:var(--teal-d)}
 .btn.warn{background:var(--red)}
 .btn.small{padding:13px;font-size:17px}
 .btn[disabled]{opacity:.45}
-.row{display:flex;gap:10px}
-.row .btn{flex:1}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .btn{flex:1 1 0;min-width:0}
+.btn{overflow-wrap:break-word}
 
 /* ---------- domů ---------- */
 .hero{
