@@ -27,7 +27,8 @@ function doPost(e) {
       d.blok || '',
       d.hotovo || 0,
       d.celkem || 0,
-      d.cviky || ''
+      d.cviky || '',
+      d.verze || ''
     ]);
   } catch (err) {
     console.error(err);
@@ -44,9 +45,9 @@ function list_() {
   let sh = ss.getSheetByName(LIST);
   if (!sh) {
     sh = ss.insertSheet(LIST);
-    sh.appendRow(['Přijato', 'Kdo', 'Datum', 'Týden', 'Blok', 'Hotovo', 'Celkem', 'Cviky']);
+    sh.appendRow(['Přijato', 'Kdo', 'Datum', 'Týden', 'Blok', 'Hotovo', 'Celkem', 'Cviky', 'Verze']);
     sh.setFrozenRows(1);
-    sh.getRange('A1:H1').setFontWeight('bold');
+    sh.getRange('A1:I1').setFontWeight('bold');
   }
   return sh;
 }

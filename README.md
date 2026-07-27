@@ -32,6 +32,33 @@ v iframu nefunguje offline režim ani přidání na plochu.
 
 ---
 
+## Aktualizace — jak to funguje
+
+Appka se aktualizuje **sama**. Nahraješ nové soubory na GitHub a při dalším
+spuštění na mamčině telefonu už běží nová verze. Nemusíš nic odinstalovávat,
+mazat cache ani ji prosit, aby appku dvakrát zavřela.
+
+Když nová verze dorazí, zatímco je uprostřed cviku, aktualizace **počká**,
+až lekci dokončí — cvičení jí nepřeruší.
+
+Bez internetu appka naběhne z poslední uložené kopie a aktualizuje se
+při příštím spuštění se signálem.
+
+### Jak si na dálku ověříš, že to dojelo
+
+V **Nastavení** je úplně dole *Verze v tomhle telefonu*. Přepiš `VERZE_APP`
+v `app.js` na dnešní datum vždy, když něco měníš — pak stačí:
+
+- zavolat mamce a nechat si přečíst datum v Nastavení, **nebo**
+- podívat se do Google Sheetu, kde je verze u každého záznamu ve sloupci *Verze*
+
+Druhá možnost je lepší: uvidíš to bez volání, jakmile zacvičí.
+
+Kdybys byl náhodou u ní, v **Nastavení → Aktualizace** je tlačítko
+*Zkontrolovat aktualizaci*, které vynutí kontrolu okamžitě.
+
+---
+
 ## Co kde upravíš
 
 | Chci změnit | Soubor | Kde |
@@ -40,11 +67,12 @@ v iframu nefunguje offline režim ani přidání na plochu.
 | Text cviku, kroky, dávkování | `cviky.js` | pole `CVIKY` |
 | Seznam zakázaných pohybů | `cviky.js` | pole `NEDELAT` |
 | Varovné signály | `cviky.js` | pole `VLAJKY` |
-| Adresa pro odesílání pokroku | `app.js` | `SYNC_URL` na prvním řádku |
+| Adresa pro odesílání pokroku | `app.js` | `SYNC_URL` na začátku |
 | Jméno v záznamech | `app.js` | `KDO` |
+| Označení verze | `app.js` | `VERZE_APP` |
 
-Po každé úpravě zvyš verzi v `sw.js` (`const VERZE = 'pohyb-v2'` atd.),
-jinak telefon může dál používat starou verzi z cache.
+Postup úpravy: v repu klikni na soubor → ikona tužky → přepiš → **Commit changes**.
+`sw.js` už měnit nemusíš, verzování v něm je zrušené.
 
 ### Videa
 
@@ -61,8 +89,8 @@ Volitelné. Bez nastavení appka běží normálně, jen se nic neodesílá.
 1. Postup v souboru `apps-script.gs` (nasazení jako webová aplikace).
 2. Získanou URL vlož do `app.js` → `SYNC_URL`.
 
-Odesílá se pouze datum, číslo týdne a bloku, počet dokončených cviků a jejich názvy.
-Nic jiného. Když je telefon offline, záznam počká ve frontě a odešle se později.
+Odesílá se pouze datum, číslo týdne a bloku, počet dokončených cviků, jejich názvy
+a označení verze appky. Nic jiného. Když je telefon offline, záznam počká ve frontě a odešle se později.
 
 **Řekni jí o tom dopředu.** Ať to bere jako podporu, ne jako kontrolu.
 

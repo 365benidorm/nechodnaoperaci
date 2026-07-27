@@ -1,6 +1,14 @@
-/* Denní pohyb — offline cache.
-   Po každé úpravě souborů zvyš číslo verze, jinou změnu dělat nemusíš. */
-const VERZE = 'pohyb-v2';
+/* Denní pohyb — offline provoz a automatické aktualizace.
+ *
+ * Strategie: nejdřív síť, teprve při jejím selhání cache.
+ * Díky tomu se každá změna nahraná na GitHub projeví při dalším spuštění
+ * appky sama, bez zasahování do telefonu. Když telefon nemá signál,
+ * appka naběhne z poslední uložené kopie.
+ *
+ * Jméno níž už měnit nemusíš — je to jen název úložiště, ne verze. */
+const CACHE = 'pohyb';
+const LIMIT_MS = 3000;          // jak dlouho čekat na síť, než sáhnu do cache
+
 const SOUBORY = [
   './',
   './index.html',
@@ -12,32 +20,48 @@ const SOUBORY = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERZE).then(c => c.addAll(SOUBORY)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => c.addAll(SOUBORY))
+      .catch(() => { })
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(k => Promise.all(k.filter(x => x !== VERZE).map(x => caches.delete(x))))
+      .then(k => Promise.all(k.filter(x => x !== CACHE).map(x => caches.delete(x))))
       .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  const url = new URL(e.request.url);
-  if (url.origin !== location.origin) return;   // odesílání pokroku necachovat
+  if (new URL(e.request.url).origin !== location.origin) return;  // odesílání pokroku neřešíme
+  e.respondWith(sitNejdriv(e.request));
+});
 
-  e.respondWith(
-    caches.match(e.request).then(hit => {
-      const sit = fetch(e.request).then(res => {
-        if (res && res.status === 200) {
-          const kopie = res.clone();
-          caches.open(VERZE).then(c => c.put(e.request, kopie));
-        }
-        return res;
-      }).catch(() => hit);
-      return hit || sit;
-    })
-  );
+async function sitNejdriv(req) {
+  const cache = await caches.open(CACHE);
+  try {
+    const res = await Promise.race([
+      fetch(req, { cache: 'no-store' }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('pomalá síť')), LIMIT_MS))
+    ]);
+    if (res && res.status === 200) cache.put(req, res.clone()).catch(() => { });
+    return res;
+  } catch (err) {
+    const hit = await cache.match(req);
+    if (hit) return hit;
+    if (req.mode === 'navigate') {
+      const idx = await cache.match('./index.html');
+      if (idx) return idx;
+    }
+    throw err;
+  }
+}
+
+self.addEventListener('message', e => {
+  if (e.data === 'aktualizuj') self.skipWaiting();
 });

@@ -3,8 +3,19 @@
    Sem vlož adresu nasazené Apps Script webové aplikace (viz apps-script.gs).
    Necháš-li prázdné, appka funguje normálně, jen se nic neodesílá.
    ========================================================================== */
-const SYNC_URL = "https://script.google.com/macros/s/AKfycbzQuEOFL1Jy9sCt5-x-MYCXobG8pupvOMnoxFSB3IsU0Utp-Qd2VOKtj69tgKdhxbkc/exec";
+const SYNC_URL = "";
 const KDO = "Máma";
+
+/* Označení verze. Až budeš něco měnit, přepiš datum — objeví se dole
+   v Nastavení a posílá se s každým záznamem do Sheetu, takže na dálku
+   poznáš, jestli mamce nová verze skutečně dojela. */
+const VERZE_APP = "2026-07-27";
+
+/* stav automatické aktualizace — musí být deklarované dřív, než poprvé
+   proběhne render(), jinak appka spadne na temporal dead zone */
+let CEKA_UPDATE = false;
+let NACITAM = false;
+let REG = null;
 
 /* ========================== ÚLOŽIŠTĚ ==================================== */
 let LS = true;
@@ -111,21 +122,124 @@ window.addEventListener('online', poslatFrontu);
 
 /* ========================== ZVUK A VIBRACE ============================== */
 let AC = null;
-function pip(dvakrat) {
+function odemkniZvuk() {
   try {
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
-    const t0 = AC.currentTime;
-    const beep = (t) => {
-      const o = AC.createOscillator(), g = AC.createGain();
-      o.frequency.value = 760; o.type = 'sine';
-      g.gain.setValueAtTime(0.001, t);
-      g.gain.exponentialRampToValueAtTime(0.28, t + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.001, t + 0.32);
-      o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + 0.34);
-    };
-    beep(t0); if (dvakrat) beep(t0 + 0.42);
+    if (AC.state === 'suspended') AC.resume();
   } catch (e) { }
-  if (navigator.vibrate) navigator.vibrate(dvakrat ? [180, 90, 180] : 180);
+}
+document.addEventListener('touchstart', odemkniZvuk, { once: true });
+document.addEventListener('click', odemkniZvuk, { once: true });
+
+function ton(f, zpozdeni, delka, hlasitost) {
+  const t = AC.currentTime + zpozdeni;
+  const o = AC.createOscillator(), g = AC.createGain();
+  o.type = 'sine'; o.frequency.value = f;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(hlasitost, t + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + delka);
+  o.connect(g); g.connect(AC.destination);
+  o.start(t); o.stop(t + delka + 0.05);
+}
+
+/* krátké pípnutí tři vteřiny před koncem */
+function pip() {
+  odemkniZvuk();
+  try { ton(740, 0, 0.28, 0.18); } catch (e) { }
+  if (navigator.vibrate) navigator.vibrate(120);
+}
+
+/* cinknutí na konci časovače — tři tóny, ať je slyšet i přes místnost */
+function cink() {
+  odemkniZvuk();
+  try {
+    ton(880, 0.00, 0.85, 0.38);
+    ton(1174.7, 0.20, 0.85, 0.38);
+    ton(1567.98, 0.40, 1.25, 0.42);
+  } catch (e) { }
+  if (navigator.vibrate) navigator.vibrate([250, 120, 250, 120, 380]);
+}
+
+/* ==================== OBRAZOVKA NEZHASNE PŘI CVIČENÍ ==================== */
+let WL = null;
+function drzObrazovku() {
+  try {
+    if ('wakeLock' in navigator && !WL)
+      navigator.wakeLock.request('screen').then(w => {
+        WL = w; w.addEventListener('release', () => { WL = null; });
+      }).catch(() => { });
+  } catch (e) { }
+}
+function uvolniObrazovku() {
+  try { if (WL) { WL.release(); WL = null; } } catch (e) { }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && SES && SES.bezi) drzObrazovku();
+});
+
+/* ========================== ČTENÍ NAHLAS ================================ */
+const TTS = ('speechSynthesis' in window);
+let HLASY = [];
+function nactiHlasy() { try { HLASY = window.speechSynthesis.getVoices() || []; } catch (e) { HLASY = []; } }
+if (TTS) { nactiHlasy(); try { window.speechSynthesis.onvoiceschanged = nactiHlasy; } catch (e) { } }
+function ceskyHlas() { return HLASY.filter(v => /^cs/i.test(v.lang))[0] || null; }
+
+const RYCHLOSTI = { pomalu: 0.75, normalne: 0.92, rychle: 1.12 };
+let AKT_CVIK = null;
+let REC = { bezi: false, idx: 0, items: [], rate: 0.92, keep: null };
+
+function zvyrazni(sel) {
+  document.querySelectorAll('.krok-akt').forEach(e => e.classList.remove('krok-akt'));
+  if (!sel) return;
+  const el = document.querySelector(sel);
+  if (el) { el.classList.add('krok-akt'); el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+}
+function tlacitkoCteni(bezi) {
+  const b = document.getElementById('btts');
+  if (b) b.textContent = bezi ? '■  Zastavit čtení' : '▶  Přečíst nahlas';
+}
+function prepniCteni() {
+  if (!TTS) return;
+  if (REC.bezi) { zastavCteni(); return; }
+  spustCteni();
+}
+function spustCteni() {
+  const c = AKT_CVIK;
+  if (!c) return;
+  try { window.speechSynthesis.cancel(); } catch (e) { }
+  REC.items = c.kroky.map((t, i) => ({ text: t, sel: '#k' + i }));
+  REC.items.push({ text: 'Pozor. ' + c.pozor, sel: '#kPozor' });
+  REC.idx = 0; REC.bezi = true;
+  REC.rate = RYCHLOSTI[store.get('rychlost', 'normalne')] || RYCHLOSTI.normalne;
+  tlacitkoCteni(true);
+  // Chrome umí čtení po chvíli uspat — tímhle ho držíme vzhůru
+  clearInterval(REC.keep);
+  REC.keep = setInterval(() => {
+    try { if (window.speechSynthesis.speaking) window.speechSynthesis.resume(); } catch (e) { }
+  }, 8000);
+  dalsiVeta();
+}
+function dalsiVeta() {
+  if (!REC.bezi) return;
+  if (REC.idx >= REC.items.length) { zastavCteni(); return; }
+  const it = REC.items[REC.idx];
+  zvyrazni(it.sel);
+  let u;
+  try { u = new SpeechSynthesisUtterance(it.text); } catch (e) { return zastavCteni(); }
+  u.lang = 'cs-CZ';
+  u.rate = REC.rate;
+  const v = ceskyHlas(); if (v) u.voice = v;
+  const pokracuj = () => { REC.idx++; setTimeout(dalsiVeta, 320); };
+  u.onend = pokracuj;
+  u.onerror = pokracuj;
+  try { window.speechSynthesis.speak(u); } catch (e) { zastavCteni(); }
+}
+function zastavCteni() {
+  REC.bezi = false;
+  clearInterval(REC.keep); REC.keep = null;
+  try { window.speechSynthesis.cancel(); } catch (e) { }
+  zvyrazni(null);
+  tlacitkoCteni(false);
 }
 
 /* ========================== VYKRESLOVÁNÍ ================================ */
@@ -150,14 +264,16 @@ function faze(c) {
 }
 
 function detailBody(c, kompakt) {
+  AKT_CVIK = c;
   const v = VIDEA[c.id];
   return `
     ${faze(c)}
     <div class="card">
       <h3>Jak na to</h3>
-      <ol class="kroky">${c.kroky.map(k => `<li>${esc(k)}</li>`).join('')}</ol>
+      <ol class="kroky">${c.kroky.map((k, i) => `<li id="k${i}">${esc(k)}</li>`).join('')}</ol>
     </div>
-    <div class="note red"><div class="h">Pozor</div>${esc(c.pozor)}</div>
+    ${TTS ? `<button class="btn ghost tts" id="btts" onclick="prepniCteni()">▶&nbsp; Přečíst nahlas</button>` : ''}
+    <div class="note red" id="kPozor"><div class="h">Pozor</div>${esc(c.pozor)}</div>
     ${kompakt ? '' : `<div class="note"><div class="h">Proč to děláš</div>${esc(c.proc)}</div>`}
     ${v ? `<a class="btn ghost small" href="${esc(v)}" target="_blank" rel="noopener">Přehrát video ↗</a>` : ''}
   `;
@@ -257,7 +373,7 @@ function viewLekce() {
 }
 
 const fmt = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
-function stopTik() { if (TIK) { clearInterval(TIK); TIK = null; } }
+function stopTik() { if (TIK) { clearInterval(TIK); TIK = null; } uvolniObrazovku(); }
 function resetTimer() {
   stopTik(); SES.bezi = false; SES.zbylo = trvaniS(SES.list[SES.idx]);
   const t = document.getElementById('tmr'); if (t) { t.textContent = fmt(SES.zbylo); t.classList.remove('done'); }
@@ -265,26 +381,36 @@ function resetTimer() {
 }
 function prepniTimer() {
   const b = document.getElementById('bstart');
-  if (SES.bezi) { stopTik(); SES.bezi = false; b.textContent = 'Pokračovat'; return; }
+  if (SES.bezi) { stopTik(); SES.bezi = false; b.textContent = 'Pokračovat'; uvolniObrazovku(); return; }
   if (SES.zbylo <= 0) {
     SES.zbylo = trvaniS(SES.list[SES.idx]);
     const t = document.getElementById('tmr');
     if (t) { t.textContent = fmt(SES.zbylo); t.classList.remove('done'); }
   }
   SES.bezi = true; b.textContent = 'Pauza';
-  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); AC.resume(); } catch (e) { }
+  odemkniZvuk();
+  drzObrazovku();
+
+  // počítáme podle skutečného času, ne podle počtu tiků — telefon
+  // časovače na pozadí zpomaluje a jinak by se čas rozešel
+  const konec = Date.now() + SES.zbylo * 1000;
+  let varovano = false;
+
   TIK = setInterval(() => {
-    SES.zbylo--;
     const t = document.getElementById('tmr');
     if (!t) return stopTik();
-    t.textContent = fmt(Math.max(0, SES.zbylo));
-    if (SES.zbylo === 3) pip(false);
-    if (SES.zbylo <= 0) {
-      stopTik(); SES.bezi = false; SES.zbylo = 0;
-      t.classList.add('done'); pip(true);
+    const zb = Math.max(0, Math.round((konec - Date.now()) / 1000));
+    SES.zbylo = zb;
+    t.textContent = fmt(zb);
+    if (zb <= 3 && zb > 0 && !varovano) { varovano = true; pip(); }
+    if (zb <= 0) {
+      stopTik(); SES.bezi = false;
+      t.classList.add('done');
+      cink();
+      uvolniObrazovku();
       const bb = document.getElementById('bstart'); if (bb) bb.textContent = 'Znovu';
     }
-  }, 1000);
+  }, 200);
 }
 function pridejOpak(n) {
   const c = SES.list[SES.idx], cil = c.opak[blok()] || c.opak[3];
@@ -300,7 +426,7 @@ function odeber(id) {
   if (i !== -1) { l[d].splice(i, 1); store.set('log', l); }
 }
 function zpetNaPredchozi() {
-  stopTik();
+  stopTik(); zastavCteni(); uvolniObrazovku();
   if (!SES || SES.idx === 0) return;
   SES.idx--;
   odeber(SES.list[SES.idx].id);   // odškrtnout, ať se dá rozhodnout znovu
@@ -317,7 +443,7 @@ function zpetKPoslednimu() {
   if (location.hash === '#/lekce') viewLekce(); else location.hash = '#/lekce';
 }
 function dalsi(hotovo) {
-  stopTik();
+  stopTik(); zastavCteni(); uvolniObrazovku();
   if (hotovo) zapis(SES.list[SES.idx].id);
   SES.idx++;
   if (SES.idx >= SES.list.length) { location.hash = '#/hotovo'; return; }
@@ -332,7 +458,7 @@ function viewHotovo() {
   const klic = dnes() + ':' + hot.length;
   if (POSLANO !== klic) {
     POSLANO = klic;
-    odesli({ kdo: KDO, datum: dnes(), tyden: tyden(), blok: blok(), hotovo: hot.length, celkem: list.length, cviky: hot.join(', ') });
+    odesli({ kdo: KDO, datum: dnes(), tyden: tyden(), blok: blok(), hotovo: hot.length, celkem: list.length, cviky: hot.join(', '), verze: VERZE_APP });
   }
   SES = null;
   app.innerHTML = `
@@ -468,10 +594,26 @@ function viewNastaveni() {
     });
   });
   h += `
+    <h2>Čtení nahlas</h2>
+    <p class="meta">${TTS
+      ? 'Pod instrukcemi u každého cviku je tlačítko <b>Přečíst nahlas</b>. Tady si nastavíš tempo.'
+      : 'Tenhle prohlížeč čtení nahlas neumí. Na telefonu zkus Chrome (Android) nebo Safari (iPhone).'}</p>
+    ${TTS ? `<div class="row">
+      ${['pomalu', 'normalne', 'rychle'].map(r => `<button class="btn ${store.get('rychlost', 'normalne') === r ? '' : 'ghost '}small"
+        onclick="store.set('rychlost','${r}'); viewNastaveni();">${{ pomalu: 'Pomalu', normalne: 'Normálně', rychle: 'Rychle' }[r]}</button>`).join('')}
+    </div>
+    <button class="btn ghost small" onclick="ukazkaCteni()">Přehrát ukázku</button>` : ''}
+
     <h2>Odesílání pokroku</h2>
     <p class="meta">${SYNC_URL
       ? 'Po každé lekci se odešle souhrn (datum, počet cviků). Neodesílá se nic jiného.'
       : 'Zatím vypnuto. Adresa se nastavuje v souboru app.js na prvním řádku.'}</p>
+
+    <h2>Aktualizace</h2>
+    <p class="meta">Appka se aktualizuje sama při spuštění. Tímhle tlačítkem se dá
+       kontrola vyvolat hned — použij ho, když jsi právě něco nahrál a chceš to ověřit.</p>
+    <button class="btn ghost small" onclick="rucniAktualizace(this)">Zkontrolovat aktualizaci</button>
+    <p class="meta" style="font-size:15px;margin-top:10px">Verze v tomhle telefonu: <b>${esc(VERZE_APP)}</b></p>
 
     <h2>Vymazat data</h2>
     <p class="meta">Smaže historii cvičení i nastavení v tomto telefonu.</p>
@@ -491,6 +633,9 @@ function prepniCvik(id) {
 function render() {
   const h = location.hash || '#/';
   stopTik();
+  zastavCteni();
+  uvolniObrazovku();
+  if (CEKA_UPDATE && !SES) { nactiZnovu(); return; }
   if (h.indexOf('#/cvik/') === 0) return viewCvik(h.slice(7));
   switch (h) {
     case '#/lekce':     return viewLekce();
@@ -507,6 +652,52 @@ startDate();
 render();
 poslatFrontu();
 
+/* ==================== AUTOMATICKÁ AKTUALIZACE ============================
+   Appka si při každém spuštění bere soubory ze sítě (viz sw.js), takže se
+   změna nahraná na GitHub projeví sama. Tenhle blok navíc řeší případ,
+   kdy nová verze dorazí za běhu — počká, až mamka nebude uprostřed cviku. */
+function nactiZnovu() {
+  if (NACITAM) return;
+  NACITAM = true;
+  location.reload();
+}
+function zkusAktualizovat() {
+  if (REG) REG.update().catch(() => { });
+}
+function rucniAktualizace(btn) {
+  if (btn) { btn.textContent = 'Hledám…'; btn.disabled = true; }
+  if (!REG) { setTimeout(() => nactiZnovu(), 400); return; }
+  REG.update()
+    .then(() => new Promise(r => setTimeout(r, 1800)))
+    .then(() => nactiZnovu())
+    .catch(() => nactiZnovu());
+}
+
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then(reg => {
+        REG = reg;
+        reg.update().catch(() => { });
+        // kontrola při každém návratu do appky
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') zkusAktualizovat();
+        });
+        window.addEventListener('online', zkusAktualizovat);
+      })
+      .catch(() => { });
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (SES) { CEKA_UPDATE = true; return; }   // uprostřed lekce nerušit
+      nactiZnovu();
+    });
+  });
+}
+
+/* krátká ukázka čtení pro nastavení tempa */
+function ukazkaCteni() {
+  if (!TTS) return;
+  zastavCteni();
+  AKT_CVIK = { kroky: ['Takhle rychle se budou číst instrukce ke cvikům.'], pozor: 'Tempo se dá kdykoli změnit.' };
+  spustCteni();
 }
