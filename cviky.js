@@ -55,6 +55,47 @@ const WALL   = `<rect x="24" y="34" width="16" height="318" fill="#DAE4E9"/>`;
 const LINKA  = `<rect x="26" y="196" width="120" height="16" rx="6" fill="#C7D5DB"/>
                 <rect x="32" y="212" width="12" height="140" fill="#DAE4E9"/>`;
 
+/* Linka VPRAVO — postava v bočním pohledu míří špičkami vpravo,
+   takže jen s touhle variantou stojí čelem k lince, jak říkají instrukce. */
+const LINKA_R = `<rect x="254" y="196" width="120" height="16" rx="6" fill="#C7D5DB"/>
+                 <rect x="336" y="212" width="12" height="140" fill="#DAE4E9"/>`;
+
+/* ---- POHLED ZPŘEDU ----
+   Pohyby do strany (únožení, stisk kolen) se v bočním pohledu nakreslit nedají.
+   Tady je postava čelem k divákovi: dvě paže, dvě nohy. */
+function figF(o) {
+  const c = o.bad ? 'f-bad' : 'f-line';
+  const t = o.bad ? 'f-bad' : (o.cue ? 'f-cue' : 'f-line');
+  let s = '';
+  s += `<path class="${c}" d="${D([o.hip, o.knL, o.anL])}"/>`;
+  s += `<path class="${c}" d="${D([o.hip, o.knR, o.anR])}"/>`;
+  s += `<path class="${c}" d="${D([[o.anL[0] - 17, o.anL[1] + 6], [o.anL[0] + 13, o.anL[1] + 6]])}"/>`;
+  s += `<path class="${c}" d="${D([[o.anR[0] - 13, o.anR[1] + 6], [o.anR[0] + 17, o.anR[1] + 6]])}"/>`;
+  s += `<path class="${t}" d="${D([o.hip, o.sh])}"/>`;
+  if (o.hdL) s += `<path class="${c}" d="${D([o.sh, o.elL, o.hdL])}"/>`;
+  if (o.hdR) s += `<path class="${c}" d="${D([o.sh, o.elR, o.hdR])}"/>`;
+  s += `<circle class="${o.bad ? 'f-badhead' : 'f-head'}" cx="${o.head[0]}" cy="${o.head[1]}" r="19"/>`;
+  return s;
+}
+/* linka z pohledu zpředu — svislá deska po straně */
+const LINKA_FL = `<rect x="26" y="212" width="104" height="15" rx="6" fill="#C7D5DB"/>
+                  <rect x="30" y="227" width="12" height="125" fill="#DAE4E9"/>`;
+/* sedátko z pohledu zpředu */
+const ZIDLE_F = `<rect x="140" y="228" width="120" height="14" rx="5" fill="#A9B8C0"/>
+                 <rect x="146" y="242" width="11" height="108" fill="#BCC9D0"/>
+                 <rect x="243" y="242" width="11" height="108" fill="#BCC9D0"/>`;
+
+/* ---- POHLED ZESHORA (tandem chůze) ---- */
+const chodidlo = (x, y, uhel = 0, zvyr = false) =>
+  `<g transform="translate(${x},${y}) rotate(${uhel})">
+     <rect x="-13" y="-26" width="26" height="52" rx="13"
+       fill="${zvyr ? '#DCF0EA' : '#EEF3F5'}" stroke="${zvyr ? '#0E7C6B' : '#8FA5AF'}" stroke-width="3"/>
+     <circle cx="0" cy="-15" r="5" fill="${zvyr ? '#0E7C6B' : '#A9B8C0'}"/>
+   </g>`;
+const cara = (x1, y1, x2, y2) =>
+  `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#0E7C6B" stroke-width="3" stroke-dasharray="8 8"/>`;
+const LINKA_TOP = `<rect x="40" y="60" width="320" height="20" rx="7" fill="#C7D5DB"/>`;
+
 const ball   = (x, y, r = 15) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#E9A63C" stroke="#B57A1C" stroke-width="3"/>`;
 const roller = (x, y, w = 96) => `<rect x="${x - w / 2}" y="${y - 23}" width="${w}" height="46" rx="23" fill="#CBD9DF" stroke="#8FA5AF" stroke-width="3"/>`;
 const towel  = (x, y, w = 76, h = 26) => `<rect x="${x - w / 2}" y="${y - h / 2}" width="${w}" height="${h}" rx="${h / 2}" fill="#F4E8D2" stroke="#C6B089" stroke-width="3"/>`;
@@ -420,7 +461,7 @@ const CVIKY = [
   davka: { 1: '8× výdrž 5 vteřin', 2: '10× výdrž 5 vteřin', 3: '12× výdrž 8 vteřin' },
   pomucky: ['ručník', 'židle'],
   kroky: [
-    'Sedni si vzpřímeně na židli, chodidla na zemi.',
+    'Sedni si vzpřímeně na židli, chodidla na zemi na šířku pánve.',
     'Sroluj ručník a vlož ho mezi kolena.',
     'Stiskni kolena k sobě zhruba na 70 % síly. Ne naplno.',
     'Drž stisk 5 vteřin a normálně u toho dýchej — nezadržuj dech.',
@@ -428,13 +469,24 @@ const CVIKY = [
   ],
   pozor: 'Nezadržuj dech. Při zadrženém dechu stoupá tlak a to se u tebe nehodí.',
   proc: 'Posílí vnitřní stranu stehen a podpoří stabilitu pánve. Izometrie nezatěžuje kloub pohybem — vhodné i při bolavé kyčli.',
+  pohled: 'zpředu',
   faze: [
-    { popis: 'Ručník mezi koleny', svg: () => panel(FLOOR + CHAIR +
-        fig(SED) + towel(268, 208, 44, 32)) },
-    { popis: 'Stiskni a drž 5 vteřin', svg: () => panel(FLOOR + CHAIR +
-        fig(SED) + towel(268, 208, 36, 32) + arrR(200, 150) + arrL(340, 150) +
-        tag(110, 292, 'dýchej, nezadržuj')) },
-    { popis: 'Povol', svg: () => panel(FLOOR + CHAIR + fig(SED) + towel(268, 208, 44, 32)) }
+    { popis: 'Ručník mezi koleny', svg: () => panel(FLOOR + ZIDLE_F +
+        figF({ head: [200, 84], sh: [200, 124], hip: [200, 224],
+               elL: [166, 166], hdL: [172, 216], elR: [234, 166], hdR: [228, 216],
+               knL: [174, 258], anL: [172, 338], knR: [226, 258], anR: [228, 338] }) +
+        towel(200, 258, 40, 30) + tag(112, 146, 'pohled zpředu')) },
+    { popis: 'Stiskni a drž 5 vteřin', svg: () => panel(FLOOR + ZIDLE_F +
+        figF({ head: [200, 84], sh: [200, 124], hip: [200, 224], cue: true,
+               elL: [166, 166], hdL: [172, 216], elR: [234, 166], hdR: [228, 216],
+               knL: [182, 258], anL: [176, 338], knR: [218, 258], anR: [224, 338] }) +
+        towel(200, 258, 30, 30) + arrR(110, 258) + arrL(290, 258) +
+        tag(102, 316, 'dýchej, nezadržuj')) },
+    { popis: 'Povol', svg: () => panel(FLOOR + ZIDLE_F +
+        figF({ head: [200, 84], sh: [200, 124], hip: [200, 224],
+               elL: [166, 166], hdL: [172, 216], elR: [234, 166], hdR: [228, 216],
+               knL: [174, 258], anL: [172, 338], knR: [226, 258], anR: [228, 338] }) +
+        towel(200, 258, 40, 30)) }
   ]
 },
 
@@ -474,31 +526,39 @@ const CVIKY = [
   davka: { 1: '8× každá noha', 2: '10× každá noha', 3: '2× 12 každá noha' },
   pomucky: ['žlutá guma', 'kuchyňská linka'],
   kroky: [
-    'Uvaž gumu kolem obou kotníků. Postav se čelem k lince a chyť se jí.',
-    'Váhu přenes na jednu nohu. Stůj vzpřímeně.',
-    'Druhou nohu odtáhni do strany. Špička míří dopředu, ne nahoru.',
-    'Trup zůstává rovný — nenaklánět se na opačnou stranu.',
-    'Pomalu vrať zpět. Vyměň nohy.'
+    'Uvaž gumu kolem obou kotníků.',
+    'Postav se bokem k lince a jednou rukou se jí přidrž. Noha blíž k lince je stojná.',
+    'Váhu přenes na stojnou nohu a stůj vzpřímeně.',
+    'Vzdálenější nohu odtáhni do strany, od linky. Špička míří dopředu, ne nahoru.',
+    'Trup zůstává svislý — nenaklánět se na opačnou stranu.',
+    'Pomalu vrať zpět. Otoč se a vyměň nohy.'
   ],
   pozor: 'Rozsah je malý, zhruba 20–30 cm. Důležitější než výška nohy je, že se trup nehne.',
   proc: 'Střední hýžďový sval drží pánev při každém kroku. Když je slabý, přetěžuje se kyčel a roste riziko pádu.',
+  pohled: 'zpředu',
   faze: [
-    { popis: 'Postoj u linky, guma na kotnících', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [192, 130], hd: [142, 198], head: [241, 64] })) +
-        band([236, 344], [268, 344], 10)) },
-    { popis: 'Odtáhni nohu do strany', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [192, 130], hd: [142, 198], head: [241, 64],
-                       kn2: [292, 260], an2: [330, 340], toe2: [360, 344] })) +
-        band([252, 346], [326, 340], 12) + arrR(300, 296) + tag(112, 240, 'trup se nenaklání')) },
-    { popis: 'Pomalu zpět', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [192, 130], hd: [142, 198], head: [241, 64] })) +
-        band([236, 344], [268, 344], 10) + arrL(220, 296)) }
+    { popis: 'Bokem u linky, guma na kotnících', svg: () => panel(FLOOR + LINKA_FL +
+        figF({ head: [200, 70], sh: [200, 112], hip: [200, 216],
+               elL: [162, 158], hdL: [116, 210], elR: [238, 160], hdR: [252, 208],
+               knL: [180, 286], anL: [176, 344], knR: [222, 286], anR: [226, 344] }) +
+        band([176, 350], [226, 350], 8) + tag(120, 128, 'pohled zpředu')) },
+    { popis: 'Odtáhni nohu od linky', svg: () => panel(FLOOR + LINKA_FL +
+        figF({ head: [200, 70], sh: [200, 112], hip: [200, 216], cue: true,
+               elL: [162, 158], hdL: [116, 210], elR: [238, 160], hdR: [252, 208],
+               knL: [180, 286], anL: [176, 344], knR: [258, 274], anR: [300, 330] }) +
+        band([176, 350], [300, 336], 16) + arrR(302, 300) +
+        tag(118, 128, 'trup zůstává svislý') + dash([200, 108], [200, 224])) },
+    { popis: 'Pomalu zpět', svg: () => panel(FLOOR + LINKA_FL +
+        figF({ head: [200, 70], sh: [200, 112], hip: [200, 216],
+               elL: [162, 158], hdL: [116, 210], elR: [238, 160], hdR: [252, 208],
+               knL: [180, 286], anL: [176, 344], knR: [222, 286], anR: [226, 344] }) +
+        band([176, 350], [226, 350], 8) + arrL(268, 300)) }
   ],
-  spatne: { popis: 'Náklon trupu místo práce kyčle', svg: () => panel(FLOOR + LINKA +
-      fig({ bad: true, hip: [230, 180], kn: [220, 262], an: [214, 348], toe: [252, 352],
-            kn2: [286, 258], an2: [326, 338], toe2: [356, 342],
-            sh: [206, 88], el: [166, 128], hd: [140, 198], head: [200, 66], curve: [206, 136] }) +
-      cross(300, 66) + tag(96, 240, 'naklonila ses', true), true) }
+  spatne: { popis: 'Náklon trupu místo práce kyčle', svg: () => panel(FLOOR + LINKA_FL +
+      figF({ bad: true, head: [166, 78], sh: [176, 118], hip: [204, 216],
+             elL: [140, 162], hdL: [116, 212], elR: [212, 164], hdR: [232, 210],
+             knL: [186, 286], anL: [182, 344], knR: [262, 276], anR: [306, 330] }) +
+      cross(304, 64) + tag(96, 130, 'naklonila ses', true), true) }
 },
 
 /* ---------- 15 ---------- */
@@ -517,21 +577,21 @@ const CVIKY = [
   pozor: 'Prohnutí v bedrech je hlavní chyba a u tebe zbytečné riziko. Radši menší rozsah a rovná záda.',
   proc: 'Velký hýžďový sval je hlavní motor při chůzi do schodů a při vstávání. Zároveň drží tělo vzpřímené.',
   faze: [
-    { popis: 'Postoj u linky', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [192, 130], hd: [142, 198], head: [241, 64] }))) },
-    { popis: 'Noha vzad z hýždě', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [192, 130], hd: [142, 198], head: [241, 64],
-                       kn2: [292, 256], an2: [332, 330], toe2: [360, 340], cue: true })) +
-        arrR(310, 292) + tag(110, 240, 'bedra se neprohýbají')) },
-    { popis: 'Pomalu zpět', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [192, 130], hd: [142, 198], head: [241, 64] })) +
-        arrL(226, 292)) }
+    { popis: 'Čelem k lince, přidrž se', svg: () => panel(FLOOR + LINKA_R +
+        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [276, 136], hd: [304, 190], head: [241, 64] }))) },
+    { popis: 'Noha vzad z hýždě', svg: () => panel(FLOOR + LINKA_R +
+        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [276, 136], hd: [304, 190], head: [241, 64],
+                       kn2: [204, 254], an2: [166, 328], toe2: [138, 336], cue: true })) +
+        arrL(196, 292) + tag(70, 250, 'bedra se neprohýbají')) },
+    { popis: 'Pomalu zpět', svg: () => panel(FLOOR + LINKA_R +
+        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [276, 136], hd: [304, 190], head: [241, 64] })) +
+        arrR(210, 292)) }
   ],
-  spatne: { popis: 'Prohnutá bedra', svg: () => panel(FLOOR + LINKA +
+  spatne: { popis: 'Prohnutá bedra', svg: () => panel(FLOOR + LINKA_R +
       fig({ bad: true, hip: [252, 180], kn: [250, 262], an: [248, 348], toe: [286, 352],
-            kn2: [300, 250], an2: [344, 320], toe2: [368, 332],
-            sh: [232, 88], el: [186, 128], hd: [142, 198], head: [228, 66], curve: [268, 132] }) +
-      cross(300, 66) + tag(112, 240, 'prohnutá bedra', true), true) }
+            kn2: [200, 248], an2: [156, 318], toe2: [130, 328],
+            sh: [232, 88], el: [268, 138], hd: [300, 190], head: [228, 66], curve: [268, 132] }) +
+      cross(190, 66) + tag(56, 250, 'prohnutá bedra', true), true) }
 },
 
 /* ---------- 16 ---------- */
@@ -550,15 +610,15 @@ const CVIKY = [
   pozor: 'Žádné poskoky ani rychlé opakování. Otřesy jsou u tebe zbytečné riziko.',
   proc: 'Lýtka a chodidla jsou první, co tě zachrání při zakopnutí. Zároveň podporují prokrvení dolních končetin.',
   faze: [
-    { popis: 'Postoj u linky', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [192, 130], hd: [142, 198], head: [241, 64] }))) },
-    { popis: 'Zvedni se na špičky', svg: () => panel(FLOOR + LINKA +
+    { popis: 'Čelem k lince', svg: () => panel(FLOOR + LINKA_R +
+        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [276, 136], hd: [304, 190], head: [241, 64] }))) },
+    { popis: 'Zvedni se na špičky', svg: () => panel(FLOOR + LINKA_R +
         fig(cp(STOJ, { hip: [246, 156], kn: [250, 240], an: [250, 326], toe: [292, 350],
-                       sh: [242, 62], el: [190, 108], hd: [142, 196], head: [241, 40] })) +
-        arrUp(330, 300) + tag(140, 250, 'pata přímo nahoru')) },
-    { popis: 'Klesej pomalu — tři vteřiny', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [192, 130], hd: [142, 198], head: [241, 64] })) +
-        tag(150, 250, 'počítej do tří')) }
+                       sh: [242, 62], el: [274, 116], hd: [304, 186], head: [241, 40] })) +
+        arrUp(196, 300) + tag(58, 250, 'pata přímo nahoru')) },
+    { popis: 'Klesej pomalu — tři vteřiny', svg: () => panel(FLOOR + LINKA_R +
+        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [276, 136], hd: [304, 190], head: [241, 64] })) +
+        tag(70, 250, 'počítej do tří')) }
   ]
 },
 
@@ -640,16 +700,16 @@ const CVIKY = [
   pozor: 'Ruce měj vždy nad linkou, i když se nedržíš. Cílem není zvládnout to bez opory, ale trénovat bezpečně.',
   proc: 'Nejúčinnější prevence pádu, jakou máš k dispozici doma. U tebe je pád hlavní riziko další zlomeniny.',
   faze: [
-    { popis: 'Obě ruce na lince', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [192, 130], hd: [142, 198], head: [241, 64] }))) },
-    { popis: 'Zvedni jednu nohu', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [192, 130], hd: [142, 198], head: [241, 64],
-                       kn2: [286, 254], an2: [300, 316], toe2: [332, 318] })) +
-        tag(120, 244, 'pohled na pevný bod')) },
-    { popis: 'Postupně uber oporu', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [204, 136], hd: [150, 194], head: [241, 64],
-                       kn2: [286, 254], an2: [300, 316], toe2: [332, 318] })) +
-        tag(122, 244, 'jen jedna ruka')) }
+    { popis: 'Obě ruce na lince', svg: () => panel(FLOOR + LINKA_R +
+        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [276, 134], hd: [306, 188], head: [241, 64] }))) },
+    { popis: 'Zvedni jednu nohu', svg: () => panel(FLOOR + LINKA_R +
+        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [276, 134], hd: [306, 188], head: [241, 64],
+                       kn2: [248, 262], an2: [212, 300], toe2: [240, 314] })) +
+        tag(58, 250, 'pohled na pevný bod')) },
+    { popis: 'Postupně uber oporu', svg: () => panel(FLOOR + LINKA_R +
+        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [272, 140], hd: [300, 192], head: [241, 64],
+                       kn2: [248, 262], an2: [212, 300], toe2: [240, 314] })) +
+        tag(64, 250, 'jen jedna ruka')) }
   ]
 },
 
@@ -668,21 +728,24 @@ const CVIKY = [
   ],
   pozor: 'Jen podél opory, které se držíš. Nikdy uprostřed místnosti a nikdy bez opory na dosah.',
   proc: 'Trénuje rovnováhu v pohybu, což je situace, ve které lidé skutečně padají. Náročnější než stoj na jedné noze.',
+  pohled: 'zeshora',
   faze: [
-    { popis: 'Bokem u linky', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [244, 178], sh: [240, 84], el: [190, 128], hd: [140, 196], head: [239, 62] }))) },
-    { popis: 'Pata před špičku', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [244, 178], sh: [240, 84], el: [190, 128], hd: [140, 196], head: [239, 62],
-                       kn2: [256, 262], an2: [262, 344], toe2: [300, 348] })) +
-        `<line x1="200" y1="352" x2="340" y2="352" stroke="#0E7C6B" stroke-width="3" stroke-dasharray="7 7"/>` +
-        tag(118, 250, 'jako po čáře')) },
-    { popis: 'Pohled dopředu, ne na nohy', svg: () => panel(FLOOR + LINKA +
-        fig(cp(STOJ, { hip: [248, 178], sh: [244, 84], el: [194, 128], hd: [144, 196], head: [243, 62],
-                       kn2: [272, 262], an2: [286, 344], toe2: [324, 348] })) +
-        arrR(300, 100)) }
+    { popis: 'Výchozí postoj u linky', svg: () => panel(LINKA_TOP +
+        cara(70, 240, 340, 240) +
+        chodidlo(120, 214, 0) + chodidlo(120, 268, 0) +
+        tag(96, 128, 'pohled zeshora — chodidla') +
+        tag(112, 322, 'linka po tvé levé ruce')) },
+    { popis: 'Pata těsně před špičku', svg: () => panel(LINKA_TOP +
+        cara(70, 240, 340, 240) +
+        chodidlo(120, 240, 0) + chodidlo(172, 240, 0, true) +
+        arrR(214, 240) + tag(84, 128, 'jako po jedné čáře')) },
+    { popis: 'Pokračuj krok za krokem', svg: () => panel(LINKA_TOP +
+        cara(70, 240, 340, 240) +
+        chodidlo(120, 240, 0) + chodidlo(172, 240, 0) +
+        chodidlo(224, 240, 0) + chodidlo(276, 240, 0, true) +
+        arrR(306, 240) + tag(78, 128, 'pohled dopředu, ne na nohy')) }
   ]
 }
-
 ];
 
 /* ==========================================================================

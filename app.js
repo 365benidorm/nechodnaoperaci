@@ -9,7 +9,7 @@ const KDO = "Máma";
 /* Označení verze. Až budeš něco měnit, přepiš datum — objeví se dole
    v Nastavení a posílá se s každým záznamem do Sheetu, takže na dálku
    poznáš, jestli mamce nová verze skutečně dojela. */
-const VERZE_APP = "2026-07-27c";
+const VERZE_APP = "2026-07-28";
 
 /* stav automatické aktualizace — musí být deklarované dřív, než poprvé
    proběhne render(), jinak appka spadne na temporal dead zone */
@@ -185,9 +185,28 @@ function drzObrazovku() {
 function uvolniObrazovku() {
   try { if (WL) { WL.release(); WL = null; } } catch (e) { }
 }
+/* Obrazovka nezhasne, dokud je mamka v appce. Po 10 minutách bez dotyku
+   ji pustíme, aby appka zapomenutá na lince nevysála baterku; první dotyk
+   ji vrátí. Při běžícím časovači se nepouští nikdy. */
+let WL_IDLE = null;
+function planujUvolneni() {
+  clearTimeout(WL_IDLE);
+  WL_IDLE = setTimeout(() => {
+    if (!(SES && SES.bezi)) uvolniObrazovku();
+  }, 10 * 60 * 1000);
+}
+function obrazovkuVzhuru() {
+  if (document.visibilityState !== 'visible') return;
+  drzObrazovku();
+  planujUvolneni();
+}
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && SES && SES.bezi) drzObrazovku();
+  if (document.visibilityState === 'visible') obrazovkuVzhuru();
+  else { clearTimeout(WL_IDLE); uvolniObrazovku(); }
 });
+['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+  document.addEventListener(ev, obrazovkuVzhuru, { passive: true }));
+window.addEventListener('load', obrazovkuVzhuru);
 
 /* ========================== ČTENÍ NAHLAS ================================ */
 const TTS = ('speechSynthesis' in window);
@@ -215,12 +234,17 @@ function prepniCteni() {
   if (REC.bezi) { zastavCteni(); return; }
   spustCteni();
 }
-function spustCteni() {
+function spustCteni(kratke) {
   const c = AKT_CVIK;
   if (!c) return;
   try { window.speechSynthesis.cancel(); } catch (e) { }
-  REC.items = c.kroky.map((t, i) => ({ text: t, sel: '#k' + i }));
-  REC.items.push({ text: 'Pozor. ' + c.pozor, sel: '#kPozor' });
+  if (kratke) {
+    // opakované spuštění téhož cviku — celý postup už slyšela, stačí připomenout Pozor
+    REC.items = [{ text: 'Pozor. ' + c.pozor, sel: '#kPozor' }];
+  } else {
+    REC.items = c.kroky.map((t, i) => ({ text: t, sel: '#k' + i }));
+    REC.items.push({ text: 'Pozor. ' + c.pozor, sel: '#kPozor' });
+  }
   REC.idx = 0; REC.bezi = true;
   REC.rate = RYCHLOSTI[store.get('rychlost', 'normalne')] || RYCHLOSTI.normalne;
   tlacitkoCteni(true);
@@ -353,6 +377,7 @@ function viewLekce() {
   SES.zbylo = trvaniS(c);
   SES.opak = 0;
   SES.bezi = false;
+  SES.jizCteno = false;   // nový cvik → celý postup se přečte znovu
 
   app.innerHTML = `
     <div class="prog">${SES.list.map((_, i) => `<i class="${i <= SES.idx ? 'on' : ''}"></i>`).join('')}</div>
@@ -387,7 +412,7 @@ function viewLekce() {
 }
 
 const fmt = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
-function stopTik() { if (TIK) { clearInterval(TIK); TIK = null; } uvolniObrazovku(); }
+function stopTik() { if (TIK) { clearInterval(TIK); TIK = null; } }
 function resetTimer() {
   stopTik(); SES.bezi = false; SES.zbylo = trvaniS(SES.list[SES.idx]);
   const t = document.getElementById('tmr'); if (t) { t.textContent = fmt(SES.zbylo); t.classList.remove('done'); }
@@ -395,7 +420,11 @@ function resetTimer() {
 }
 function prepniTimer() {
   const b = document.getElementById('bstart');
-  if (SES.bezi) { stopTik(); SES.bezi = false; b.textContent = 'Pokračovat'; uvolniObrazovku(); return; }
+  if (SES.bezi) {
+    stopTik(); SES.bezi = false; b.textContent = 'Pokračovat';
+    clearTimeout(SES.ttsTimer); zastavCteni();
+    return;
+  }
   if (SES.zbylo <= 0) {
     SES.zbylo = trvaniS(SES.list[SES.idx]);
     const t = document.getElementById('tmr');
@@ -404,6 +433,18 @@ function prepniTimer() {
   SES.bezi = true; b.textContent = 'Pauza';
   cinkStart();          // zvuk při každém spuštění, i po pauze a po Znovu
   drzObrazovku();
+
+  // Čtení instrukcí se rozjede spolu s časovačem. Celý postup se čte při
+  // prvním spuštění cviku; při dalších (Pokračovat, Znovu, další série)
+  // už jen "Pozor", aby to samé neslyšela třikrát za sebou.
+  clearTimeout(SES.ttsTimer);
+  if (TTS && AKT_CVIK && store.get('cistPriStartu', true)) {
+    const kratke = !!SES.jizCteno;
+    SES.jizCteno = true;
+    SES.ttsTimer = setTimeout(() => {
+      if (SES && SES.bezi) spustCteni(kratke);
+    }, 700);            // ať se to nepřekřikuje s cinknutím
+  }
 
   // počítáme podle skutečného času, ne podle počtu tiků — telefon
   // časovače na pozadí zpomaluje a jinak by se čas rozešel
@@ -416,12 +457,13 @@ function prepniTimer() {
     const zb = Math.max(0, Math.round((konec - Date.now()) / 1000));
     SES.zbylo = zb;
     t.textContent = fmt(zb);
+    // hlas umlčíme 4 s před koncem, jinak překryje pípnutí i závěrečné cinknutí
+    if (zb <= 4 && (REC.bezi || SES.ttsTimer)) { clearTimeout(SES.ttsTimer); SES.ttsTimer = null; zastavCteni(); }
     if (zb <= 3 && zb > 0 && !varovano) { varovano = true; pip(); }
     if (zb <= 0) {
       stopTik(); SES.bezi = false;
       t.classList.add('done');
       cink();
-      uvolniObrazovku();
       const bb = document.getElementById('bstart'); if (bb) bb.textContent = 'Znovu';
     }
   }, 200);
@@ -440,7 +482,8 @@ function odeber(id) {
   if (i !== -1) { l[d].splice(i, 1); store.set('log', l); }
 }
 function zpetNaPredchozi() {
-  stopTik(); zastavCteni(); uvolniObrazovku();
+  stopTik(); zastavCteni();
+  if (SES) { clearTimeout(SES.ttsTimer); SES.ttsTimer = null; }
   if (!SES || SES.idx === 0) return;
   SES.idx--;
   odeber(SES.list[SES.idx].id);   // odškrtnout, ať se dá rozhodnout znovu
@@ -457,7 +500,9 @@ function zpetKPoslednimu() {
   if (location.hash === '#/lekce') viewLekce(); else location.hash = '#/lekce';
 }
 function dalsi(hotovo) {
-  stopTik(); zastavCteni(); uvolniObrazovku();
+  stopTik();
+  if (SES) { clearTimeout(SES.ttsTimer); SES.ttsTimer = null; }
+  zastavCteni();
   if (hotovo) zapis(SES.list[SES.idx].id);
   SES.idx++;
   if (SES.idx >= SES.list.length) { location.hash = '#/hotovo'; return; }
@@ -623,6 +668,14 @@ function viewNastaveni() {
       ? 'Po každé lekci se odešle souhrn (datum, počet cviků). Neodesílá se nic jiného.'
       : 'Zatím vypnuto. Adresa se nastavuje v souboru app.js na prvním řádku.'}</p>
 
+    <h2>Čtení při spuštění časovače</h2>
+    <p class="meta">Když se spustí časovač, appka sama přečte postup cviku. Při dalším spuštění
+       téhož cviku už jen připomene „Pozor“. Čtení vždy umlkne 4 vteřiny před koncem,
+       aby bylo slyšet cinknutí.</p>
+    <div class="tog"><div class="nm">Číst automaticky</div>
+      <button class="sw" role="switch" aria-checked="${store.get('cistPriStartu', true)}"
+        onclick="store.set('cistPriStartu', !store.get('cistPriStartu', true)); viewNastaveni();"></button></div>
+
     <h2>Aktualizace</h2>
     <p class="meta">Appka se aktualizuje sama při spuštění. Tímhle tlačítkem se dá
        kontrola vyvolat hned — použij ho, když jsi právě něco nahrál a chceš to ověřit.</p>
@@ -648,7 +701,6 @@ function render() {
   const h = location.hash || '#/';
   stopTik();
   zastavCteni();
-  uvolniObrazovku();
   if (CEKA_UPDATE && !SES) { nactiZnovu(); return; }
   if (h.indexOf('#/cvik/') === 0) return viewCvik(h.slice(7));
   switch (h) {
