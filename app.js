@@ -9,7 +9,7 @@ const KDO = "Máma";
 /* Označení verze. Až budeš něco měnit, přepiš datum — objeví se dole
    v Nastavení a posílá se s každým záznamem do Sheetu, takže na dálku
    poznáš, jestli mamce nová verze skutečně dojela. */
-const VERZE_APP = "2026-07-28";
+const VERZE_APP = "2026-08-04";
 
 /* stav automatické aktualizace — musí být deklarované dřív, než poprvé
    proběhne render(), jinak appka spadne na temporal dead zone */
@@ -44,34 +44,80 @@ function startDate() {
   if (!s) { s = dnes(); store.set('start', s); }
   return s;
 }
-function tyden() {
-  const diff = Math.floor((new Date(dnes()) - new Date(startDate())) / 86400000);
-  return Math.max(1, Math.floor(diff / 7) + 1);
+function den() {
+  return Math.max(0, Math.floor((new Date(dnes()) - new Date(startDate())) / 86400000));
 }
+function tyden() { return Math.floor(den() / 7) + 1; }
 function blok() { return Math.min(3, Math.max(1, Math.floor((tyden() - 1) / 3) + 1)); }
 
 /* ========================== VÝBĚR CVIKŮ ================================= */
 const KAT = { rozhybani: 'Rozhýbání', automasaz: 'Automasáž', sila: 'Síla', rovnovaha: 'Rovnováha' };
 const KAT_PORADI = ['rozhybani', 'automasaz', 'sila', 'rovnovaha'];
+const ROZESTUP = 3;     // po kolika dnech přibude v bloku další nový cvik
+const ROTUJE = 'automasaz';   // jediná kategorie, kde nevadí střídání
 
 function vypnute() { return store.get('off', []); }
-function aktivni() {
-  const off = vypnute(), b = blok();
-  return CVIKY
-    .map((c, i) => ({ c, i }))
-    .filter(x => x.c.blok <= b && off.indexOf(x.c.id) === -1)
-    .sort((a, b2) => (KAT_PORADI.indexOf(a.c.kat) - KAT_PORADI.indexOf(b2.c.kat)) || (a.i - b2.i))
+
+/* Cviky bloku 1 jsou k dispozici hned. Ve vyšších blocích přibývají po jednom
+   každé tři dny, aby lekce nenarostla ze dne na den o polovinu. */
+function serazene() {
+  return CVIKY.map((c, i) => ({ c, i }))
+    .sort((a, b) => (KAT_PORADI.indexOf(a.c.kat) - KAT_PORADI.indexOf(b.c.kat)) || (a.i - b.i))
     .map(x => x.c);
 }
+function odemcenoDen(c) {
+  if (c.blok <= 1) return 0;
+  const vBloku = serazene().filter(x => x.blok === c.blok);
+  return (c.blok - 1) * 21 + vBloku.indexOf(c) * ROZESTUP;
+}
+function odemcene() {
+  const off = vypnute(), d = den();
+  return serazene().filter(c => off.indexOf(c.id) === -1 && odemcenoDen(c) <= d);
+}
+
+/* Z odemčených se sestaví dnešní lekce. Masáže se střídají — každý den jich
+   je zhruba polovina a okno se posouvá, takže se všechny prostřídají. */
+function aktivni() {
+  const vse = odemcene();
+  const rot = vse.filter(c => c.kat === ROTUJE);
+  if (rot.length < 3) return vse;
+  const kolik = Math.ceil(rot.length / 2);
+  const posun = den() % rot.length;
+  const dnesni = [];
+  for (let i = 0; i < kolik; i++) dnesni.push(rot[(posun + i) % rot.length]);
+  return vse.filter(c => c.kat !== ROTUJE || dnesni.indexOf(c) !== -1);
+}
+
 function davka(c) { return c.davka[blok()] || c.davka[3]; }
+
+/* ---- SÉRIE A STRANY ----------------------------------------------------
+   Počty kol jsou zapsané v cviky.js (objekt KOLA), ne odvozené z textu. */
+function serii(c) { return (c.serie && c.serie[blok()]) || 1; }
+function stran(c) { return c.strany || 1; }
+function pocetKol(c) { return serii(c) * stran(c); }
+function stranaSlovo(c, i) {
+  const s = c.slovo === 'strana' ? ['levá strana', 'pravá strana'] : ['levá noha', 'pravá noha'];
+  return s[i];
+}
+/* Popisek kola (k = 0 pro první). Prázdný, když je kolo jen jedno. */
+function popisKola(c, k) {
+  const s = serii(c), n = stran(c);
+  if (s === 1 && n === 1) return '';
+  const serie = Math.floor(k / n) + 1;
+  const strana = stranaSlovo(c, k % n);
+  if (s > 1 && n > 1) return serie + '. série — ' + strana;
+  if (s > 1) return serie + '. série z ' + s;
+  return strana;
+}
 function trvaniS(c) {
   const b = blok();
   if (c.typ === 'cas') return (c.cas[b] || 60);
   return (c.opak[b] || 8) * 5;
 }
+function cilOpak(c) { return c.opak[blok()] || c.opak[3]; }
 function odhadMinut(list) {
   if (!list.length) return 0;
-  const s = list.reduce((a, c) => a + trvaniS(c) + 25, 0);
+  const s = list.reduce((a, c) => a + pocetKol(c) * trvaniS(c) + 25, 0);
   return Math.max(5, Math.round(s / 60));
 }
 
@@ -147,7 +193,6 @@ function ton(f, zpozdeni, delka, hlasitost) {
 function pip() {
   odemkniZvuk();
   try { ton(740, 0, 0.28, 0.18); } catch (e) { }
-  if (navigator.vibrate) navigator.vibrate(120);
 }
 
 /* cinknutí při KAŽDÉM spuštění časovače — dva stoupající tóny.
@@ -158,7 +203,6 @@ function cinkStart() {
     ton(523.25, 0.00, 0.22, 0.30);
     ton(698.46, 0.13, 0.30, 0.32);
   } catch (e) { }
-  if (navigator.vibrate) navigator.vibrate([70, 60, 110]);
 }
 
 /* cinknutí na konci časovače — tři tóny, ať je slyšet i přes místnost */
@@ -169,7 +213,6 @@ function cink() {
     ton(1174.7, 0.20, 0.85, 0.38);
     ton(1567.98, 0.40, 1.25, 0.42);
   } catch (e) { }
-  if (navigator.vibrate) navigator.vibrate([250, 120, 250, 120, 380]);
 }
 
 /* ==================== OBRAZOVKA NEZHASNE PŘI CVIČENÍ ==================== */
@@ -209,7 +252,7 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('load', obrazovkuVzhuru);
 
 /* ========================== ČTENÍ NAHLAS ================================ */
-const TTS = ('speechSynthesis' in window);
+const TTS = (() => { try { return !!window.speechSynthesis && typeof window.SpeechSynthesisUtterance === 'function'; } catch (e) { return false; } })();
 let HLASY = [];
 function nactiHlasy() { try { HLASY = window.speechSynthesis.getVoices() || []; } catch (e) { HLASY = []; } }
 if (TTS) { nactiHlasy(); try { window.speechSynthesis.onvoiceschanged = nactiHlasy; } catch (e) { } }
@@ -217,7 +260,7 @@ function ceskyHlas() { return HLASY.filter(v => /^cs/i.test(v.lang))[0] || null;
 
 const RYCHLOSTI = { pomalu: 0.75, normalne: 0.92, rychle: 1.12 };
 let AKT_CVIK = null;
-let REC = { bezi: false, idx: 0, items: [], rate: 0.92, keep: null };
+let REC = { bezi: false, idx: 0, items: [], rate: 0.92, keep: null, hotovo: null };
 
 function zvyrazni(sel) {
   document.querySelectorAll('.krok-akt').forEach(e => e.classList.remove('krok-akt'));
@@ -234,12 +277,13 @@ function prepniCteni() {
   if (REC.bezi) { zastavCteni(); return; }
   spustCteni();
 }
-function spustCteni(kratke) {
+function spustCteni(kratke, hotovo) {
   const c = AKT_CVIK;
-  if (!c) return;
+  if (!c || !TTS) { if (hotovo) hotovo(); return; }
+  REC.hotovo = hotovo || null;
   try { window.speechSynthesis.cancel(); } catch (e) { }
   if (kratke) {
-    // opakované spuštění téhož cviku — celý postup už slyšela, stačí připomenout Pozor
+    // další kolo téhož cviku — postup už slyšela, stačí připomenout na co dát pozor
     REC.items = [{ text: 'Pozor. ' + c.pozor, sel: '#kPozor' }];
   } else {
     REC.items = c.kroky.map((t, i) => ({ text: t, sel: '#k' + i }));
@@ -255,23 +299,31 @@ function spustCteni(kratke) {
   }, 8000);
   dalsiVeta();
 }
+/* Ukončí čtení a spustí navazující krok (gong + čas). Volá se i tehdy,
+   když řeč selže — jinak by appka zamrzla a časovač by se nikdy nerozjel. */
+function dokonciCteni() {
+  const cb = REC.hotovo; REC.hotovo = null;
+  zastavCteni();
+  if (cb) cb();
+}
 function dalsiVeta() {
   if (!REC.bezi) return;
-  if (REC.idx >= REC.items.length) { zastavCteni(); return; }
+  if (REC.idx >= REC.items.length) { dokonciCteni(); return; }
   const it = REC.items[REC.idx];
   zvyrazni(it.sel);
   let u;
-  try { u = new SpeechSynthesisUtterance(it.text); } catch (e) { return zastavCteni(); }
+  try { u = new SpeechSynthesisUtterance(it.text); } catch (e) { return dokonciCteni(); }
   u.lang = 'cs-CZ';
   u.rate = REC.rate;
   const v = ceskyHlas(); if (v) u.voice = v;
   const pokracuj = () => { REC.idx++; setTimeout(dalsiVeta, 320); };
   u.onend = pokracuj;
   u.onerror = pokracuj;
-  try { window.speechSynthesis.speak(u); } catch (e) { zastavCteni(); }
+  try { window.speechSynthesis.speak(u); } catch (e) { dokonciCteni(); }
 }
 function zastavCteni() {
   REC.bezi = false;
+  REC.hotovo = null;
   clearInterval(REC.keep); REC.keep = null;
   try { window.speechSynthesis.cancel(); } catch (e) { }
   zvyrazni(null);
@@ -364,8 +416,19 @@ function zacniLekci() {
     const zbyva = list.findIndex(c => hot.indexOf(c.id) === -1);
     idx = zbyva === -1 ? 0 : zbyva;
   }
-  SES = { list, idx, zbylo: 0, bezi: false, opak: 0 };
+  SES = { list, idx, kolo: 0, zbylo: 0, bezi: false, opak: 0, faze: 'stoji' };
   if (location.hash === '#/lekce') viewLekce(); else location.hash = '#/lekce';
+}
+
+/* Text tlačítka podle toho, co se právě děje. */
+function popisStartu() {
+  const c = SES.list[SES.idx];
+  if (SES.faze === 'cte') return 'Přeskočit čtení';
+  if (SES.faze === 'bezi') return 'Pauza';
+  if (SES.faze === 'pauza') return 'Pokračovat';
+  if (SES.faze === 'pocita') return 'Cvič — a odpočítávej níž';
+  const p = popisKola(c, SES.kolo);
+  return p ? 'Spustit — ' + p : 'Spustit';
 }
 
 function viewLekce() {
@@ -377,31 +440,34 @@ function viewLekce() {
   SES.zbylo = trvaniS(c);
   SES.opak = 0;
   SES.bezi = false;
-  SES.jizCteno = false;   // nový cvik → celý postup se přečte znovu
+  SES.faze = 'stoji';
+
+  const kol = pocetKol(c);
+  const popis = popisKola(c, SES.kolo);
 
   app.innerHTML = `
     <div class="prog">${SES.list.map((_, i) => `<i class="${i <= SES.idx ? 'on' : ''}"></i>`).join('')}</div>
     <h1 style="margin-top:14px">${esc(c.nazev)}</h1>
-    <p class="meta" style="margin-bottom:14px"><b>${esc(davka(c))}</b></p>
+    <p class="meta" style="margin-bottom:10px"><b>${esc(davka(c))}</b></p>
     ${c.pomucky.map(p => `<span class="tagline">${esc(p)}</span>`).join('')}
 
     <div class="card" style="padding:14px 18px 18px">
+      ${kol > 1 ? `<div class="kolo" id="kolo">${esc(popis)}</div>
+        <div class="kolapruh">${[...Array(kol)].map((_, i) =>
+          `<i class="${i < SES.kolo ? 'hotovo' : (i === SES.kolo ? 'ted' : '')}"></i>`).join('')}</div>` : ''}
       ${c.typ === 'cas'
-        ? `<div class="timer" id="tmr">${fmt(SES.zbylo)}</div>
-           <div class="row" style="margin-top:14px">
-             <button class="btn small" id="bstart" onclick="prepniTimer()">Spustit</button>
-             <button class="btn ghost small" onclick="resetTimer()">Vynulovat</button>
-           </div>`
-        : `<div class="counter" id="cnt">0 z ${c.opak[blok()] || c.opak[3]}</div>
-           <div class="row" style="margin-top:14px">
-             <button class="btn small" onclick="pridejOpak(1)">+ 1 opakování</button>
-             <button class="btn ghost small" onclick="pridejOpak(-1)">−</button>
-           </div>`}
+        ? `<div class="timer" id="tmr">${fmt(SES.zbylo)}</div>`
+        : `<div class="counter" id="cnt">0 z ${cilOpak(c)}</div>`}
+      <button class="btn" id="bstart" style="margin-top:14px" onclick="tlacitkoStart()">${esc(popisStartu())}</button>
+      ${c.typ === 'cas'
+        ? `<button class="btn ghost small" onclick="resetTimer()">Vynulovat</button>`
+        : `<div class="row"><button class="btn ghost small" onclick="pridejOpak(1)">+ 1 opakování</button>
+           <button class="btn ghost small" onclick="pridejOpak(-1)">−</button></div>`}
     </div>
 
     ${detailBody(c, true)}
 
-    <div class="sticky">
+    <div class="patka">
       <button class="btn" onclick="dalsi(true)">${SES.idx === SES.list.length - 1 ? 'Hotovo — ukončit lekci' : 'Hotovo — další cvik'}</button>
       <div class="row">
         <button class="btn ghost small" onclick="zpetNaPredchozi()" ${SES.idx === 0 ? 'disabled' : ''}>← Předchozí cvik</button>
@@ -411,70 +477,119 @@ function viewLekce() {
   `;
 }
 
+function prekresliKolo() {
+  const c = SES.list[SES.idx];
+  const k = document.getElementById('kolo');
+  if (k) k.textContent = popisKola(c, SES.kolo);
+  document.querySelectorAll('.kolapruh i').forEach((el, i) => {
+    el.className = i < SES.kolo ? 'hotovo' : (i === SES.kolo ? 'ted' : '');
+  });
+  const t = document.getElementById('tmr');
+  if (t) { t.textContent = fmt(trvaniS(c)); t.classList.remove('done'); }
+  const n = document.getElementById('cnt');
+  if (n) n.textContent = '0 z ' + cilOpak(c);
+  SES.zbylo = trvaniS(c); SES.opak = 0;
+  obnovTlacitko();
+}
+function obnovTlacitko() {
+  const b = document.getElementById('bstart');
+  if (!b) return;
+  b.textContent = popisStartu();
+  // ve fázi počítání se nemá co mačkat — počítá se tlačítky pod tím
+  b.disabled = (SES.faze === 'pocita');
+  b.classList.toggle('ghost', SES.faze === 'pocita');
+}
+
 const fmt = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 function stopTik() { if (TIK) { clearInterval(TIK); TIK = null; } }
 function resetTimer() {
-  stopTik(); SES.bezi = false; SES.zbylo = trvaniS(SES.list[SES.idx]);
-  const t = document.getElementById('tmr'); if (t) { t.textContent = fmt(SES.zbylo); t.classList.remove('done'); }
-  const b = document.getElementById('bstart'); if (b) b.textContent = 'Spustit';
+  stopTik(); zastavCteni();
+  SES.bezi = false; SES.faze = 'stoji';
+  SES.zbylo = trvaniS(SES.list[SES.idx]);
+  const t = document.getElementById('tmr');
+  if (t) { t.textContent = fmt(SES.zbylo); t.classList.remove('done'); }
+  obnovTlacitko();
 }
-function prepniTimer() {
-  const b = document.getElementById('bstart');
-  if (SES.bezi) {
-    stopTik(); SES.bezi = false; b.textContent = 'Pokračovat';
-    clearTimeout(SES.ttsTimer); zastavCteni();
-    return;
+
+/* Jedno tlačítko na všechny stavy: spustit / přeskočit čtení / pauza / pokračovat. */
+function tlacitkoStart() {
+  if (SES.faze === 'cte') { clearTimeout(SES.pojistka); zastavCteni(); poGongu(); return; }   // přeskočit výklad
+  if (SES.faze === 'bezi') {                                       // pauza
+    stopTik(); SES.bezi = false; SES.faze = 'pauza'; obnovTlacitko(); return;
   }
-  if (SES.zbylo <= 0) {
-    SES.zbylo = trvaniS(SES.list[SES.idx]);
-    const t = document.getElementById('tmr');
-    if (t) { t.textContent = fmt(SES.zbylo); t.classList.remove('done'); }
-  }
-  SES.bezi = true; b.textContent = 'Pauza';
-  cinkStart();          // zvuk při každém spuštění, i po pauze a po Znovu
+  if (SES.faze === 'pauza') { rozjedCas(); return; }               // pokračovat
+
+  // nové kolo: nejdřív čtení, pak gong, teprve pak čas
+  drzObrazovku();
+  const c = SES.list[SES.idx];
+  const cist = TTS && AKT_CVIK && store.get('cistPriStartu', true);
+  if (!cist) { poGongu(); return; }
+  SES.faze = 'cte';
+  obnovTlacitko();
+  // pojistka: kdyby hlas zamrzl uprostřed věty, po 45 s se pokračuje bez něj
+  clearTimeout(SES.pojistka);
+  SES.pojistka = setTimeout(() => {
+    if (SES && SES.faze === 'cte') { zastavCteni(); poGongu(); }
+  }, 45000);
+  // spouštíme přímo v reakci na dotyk, jinak mobil řeč zablokuje
+  spustCteni(SES.kolo > 0, () => poGongu());
+}
+
+/* Gong a rozjezd kola. */
+function poGongu() {
+  if (SES) clearTimeout(SES.pojistka);
+  cinkStart();
+  const c = SES.list[SES.idx];
+  if (c.typ === 'cas') { setTimeout(() => rozjedCas(), 900); }
+  else { SES.faze = 'pocita'; obnovTlacitko(); }
+}
+
+function rozjedCas() {
+  const c = SES.list[SES.idx];
+  if (SES.zbylo <= 0) SES.zbylo = trvaniS(c);
+  SES.bezi = true; SES.faze = 'bezi';
+  obnovTlacitko();
   drzObrazovku();
 
-  // Čtení instrukcí se rozjede spolu s časovačem. Celý postup se čte při
-  // prvním spuštění cviku; při dalších (Pokračovat, Znovu, další série)
-  // už jen "Pozor", aby to samé neslyšela třikrát za sebou.
-  clearTimeout(SES.ttsTimer);
-  if (TTS && AKT_CVIK && store.get('cistPriStartu', true)) {
-    const kratke = !!SES.jizCteno;
-    SES.jizCteno = true;
-    SES.ttsTimer = setTimeout(() => {
-      if (SES && SES.bezi) spustCteni(kratke);
-    }, 700);            // ať se to nepřekřikuje s cinknutím
-  }
-
-  // počítáme podle skutečného času, ne podle počtu tiků — telefon
-  // časovače na pozadí zpomaluje a jinak by se čas rozešel
   const konec = Date.now() + SES.zbylo * 1000;
   let varovano = false;
-
+  stopTik();
   TIK = setInterval(() => {
     const t = document.getElementById('tmr');
     if (!t) return stopTik();
     const zb = Math.max(0, Math.round((konec - Date.now()) / 1000));
     SES.zbylo = zb;
     t.textContent = fmt(zb);
-    // hlas umlčíme 4 s před koncem, jinak překryje pípnutí i závěrečné cinknutí
-    if (zb <= 4 && (REC.bezi || SES.ttsTimer)) { clearTimeout(SES.ttsTimer); SES.ttsTimer = null; zastavCteni(); }
     if (zb <= 3 && zb > 0 && !varovano) { varovano = true; pip(); }
     if (zb <= 0) {
       stopTik(); SES.bezi = false;
       t.classList.add('done');
       cink();
-      const bb = document.getElementById('bstart'); if (bb) bb.textContent = 'Znovu';
+      dalsiKolo();
     }
   }, 200);
 }
+
+/* Konec kola: buď posun na další, nebo hotový cvik. */
+function dalsiKolo() {
+  const c = SES.list[SES.idx];
+  SES.faze = 'stoji';
+  if (SES.kolo + 1 < pocetKol(c)) {
+    SES.kolo++;
+    setTimeout(() => { prekresliKolo(); }, 1400);
+  } else {
+    obnovTlacitko();
+  }
+}
+
 function pridejOpak(n) {
-  const c = SES.list[SES.idx], cil = c.opak[blok()] || c.opak[3];
-  SES.opak = Math.max(0, SES.opak + n);
+  const c = SES.list[SES.idx], cil = cilOpak(c);
+  SES.opak = Math.min(cil, Math.max(0, SES.opak + n));
   const el = document.getElementById('cnt');
   if (el) el.textContent = SES.opak + ' z ' + cil;
-  if (SES.opak === cil) pip(true);
+  if (SES.opak === cil && n > 0) { cink(); dalsiKolo(); }
 }
+
 function odeber(id) {
   const l = log(), d = dnes();
   if (!l[d]) return;
@@ -486,6 +601,7 @@ function zpetNaPredchozi() {
   if (SES) { clearTimeout(SES.ttsTimer); SES.ttsTimer = null; }
   if (!SES || SES.idx === 0) return;
   SES.idx--;
+  SES.kolo = 0; SES.faze = 'stoji';
   odeber(SES.list[SES.idx].id);   // odškrtnout, ať se dá rozhodnout znovu
   viewLekce();
   window.scrollTo(0, 0);
@@ -496,11 +612,12 @@ function zpetKPoslednimu() {
   const idx = list.length - 1;
   odeber(list[idx].id);
   POSLANO = null;
-  SES = { list, idx, zbylo: 0, bezi: false, opak: 0 };
+  SES = { list, idx, kolo: 0, zbylo: 0, bezi: false, opak: 0, faze: 'stoji' };
   if (location.hash === '#/lekce') viewLekce(); else location.hash = '#/lekce';
 }
 function dalsi(hotovo) {
   stopTik();
+  if (SES) { SES.kolo = 0; SES.faze = 'stoji'; }
   if (SES) { clearTimeout(SES.ttsTimer); SES.ttsTimer = null; }
   zastavCteni();
   if (hotovo) zapis(SES.list[SES.idx].id);

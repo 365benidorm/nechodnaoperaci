@@ -137,10 +137,17 @@ ol.kroky li.krok-akt{
 .timer.done{color:var(--teal)}
 .counter{text-align:center;font-size:22px;font-weight:650;margin:14px 0 0}
 
-.sticky{
-  position:sticky;bottom:0;background:linear-gradient(180deg,rgba(237,241,243,0) 0%,var(--bg) 26%);
-  padding:18px 0 calc(10px + env(safe-area-inset-bottom));
+.patka{padding:22px 0 calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line);margin-top:26px}
+
+/* ---------- kola cviku (série a strany) ---------- */
+.kolo{
+  text-align:center;font-weight:750;font-size:21px;letter-spacing:-.01em;
+  color:var(--teal-d);margin:0 0 10px
 }
+.kolapruh{display:flex;gap:6px;justify-content:center;margin:0 0 4px}
+.kolapruh i{width:26px;height:7px;border-radius:4px;background:var(--line)}
+.kolapruh i.hotovo{background:var(--teal)}
+.kolapruh i.ted{background:var(--ink)}
 
 /* ---------- nastavení ---------- */
 .tog{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
@@ -160,7 +167,7 @@ input[type=date],input[type=url]{
 .chk span{border:1.5px solid #333;border-radius:5px;padding:3px 12px;font-size:14px}
 @media print{
   body{background:#fff;font-size:11pt}
-  .bar,.sticky,.noprint{display:none !important}
+  .bar,.patka,.noprint{display:none !important}
   .pr-only{display:block}
   .wrap{max-width:none;padding:0}
   .card{border:0;border-bottom:1px solid #bbb;border-radius:0;padding:8px 0;margin:0;page-break-inside:avoid}

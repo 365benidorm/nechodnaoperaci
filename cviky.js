@@ -749,6 +749,46 @@ const CVIKY = [
 ];
 
 /* ==========================================================================
+   SÉRIE A STRANY
+   Kolik kol má každý cvik a jak se jmenují. Zapsáno výslovně, ne odvozeno
+   z textu dávky — „10× každá noha“ je deset opakování na každé noze (dvě
+   kola), zatímco „2× 30 vteřin“ jsou dvě série (taky dvě kola). Z textu se
+   to spolehlivě rozeznat nedá, proto je to tady natvrdo.
+   strany: 1 = cvik se dělá najednou, 2 = zvlášť levá a pravá
+   serie:  kolik opakování celé sady v daném bloku
+   ========================================================================== */
+const KOLA = {
+  dychani:        { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  rucnik_hrudni:  { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  sfinga:         { strany: 1, serie: { 1: 2, 2: 2, 3: 3 } },
+  ctyri_houpani:  { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  kyvadlo:        { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
+  micek_chodidlo: { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
+  micek_hyzde:    { strany: 2, serie: { 1: 1, 2: 1, 3: 1 }, slovo: 'strana' },
+  valec_stehno:   { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
+  valec_lytko:    { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
+  rucnik_masaz:   { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  rucnik_lytko:   { strany: 2, serie: { 1: 2, 2: 2, 3: 2 } },
+  rucnik_kolena:  { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  zidle_vstavani: { strany: 1, serie: { 1: 2, 2: 2, 3: 3 } },
+  unozeni:        { strany: 2, serie: { 1: 1, 2: 1, 3: 2 } },
+  zanozeni:       { strany: 2, serie: { 1: 1, 2: 1, 3: 2 } },
+  vypony:         { strany: 1, serie: { 1: 1, 2: 1, 3: 2 } },
+  most:           { strany: 1, serie: { 1: 1, 2: 1, 3: 2 } },
+  lopatky:        { strany: 1, serie: { 1: 1, 2: 1, 3: 2 } },
+  jedna_noha:     { strany: 2, serie: { 1: 3, 2: 3, 3: 3 } },
+  tandem:         { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } }
+};
+
+/* přilepit ke cvikům, ať je to na jednom místě */
+CVIKY.forEach(c => {
+  const k = KOLA[c.id] || { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } };
+  c.strany = k.strany;
+  c.serie = k.serie;
+  c.slovo = k.slovo || 'noha';
+});
+
+/* ==========================================================================
    ZAKÁZANÉ POHYBY  a  VAROVNÉ SIGNÁLY
    ========================================================================== */
 const NEDELAT = [
