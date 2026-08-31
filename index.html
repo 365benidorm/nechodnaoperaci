@@ -38,7 +38,13 @@ a{color:var(--teal-d)}
   padding:calc(10px + env(safe-area-inset-top)) var(--pad) 10px;
   display:flex;align-items:center;gap:12px;
 }
-.bar .t{font-weight:700;font-size:18px;flex:1;letter-spacing:-.01em}
+.bar .t{font-weight:700;font-size:18px;flex:1;letter-spacing:-.01em;text-align:center}
+.bar .hotovo{
+  flex:none;border:0;border-radius:11px;background:var(--teal);color:#fff;
+  font:inherit;font-weight:700;font-size:16px;padding:11px 14px;cursor:pointer;
+  min-height:44px;white-space:nowrap
+}
+.bar .hotovo:active{transform:translateY(1px)}
 .back{
   border:0;background:none;font:inherit;font-weight:600;color:var(--teal-d);
   padding:8px 4px;margin-left:-4px;cursor:pointer;font-size:17px;
@@ -137,7 +143,8 @@ ol.kroky li.krok-akt{
 .timer.done{color:var(--teal)}
 .counter{text-align:center;font-size:22px;font-weight:650;margin:14px 0 0}
 
-.patka{padding:22px 0 calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line);margin-top:26px}
+.patka{display:flex;gap:10px;padding:22px 0 calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--line);margin-top:26px}
+.patka .btn{flex:1 1 0;min-width:0;margin:0}
 
 /* ---------- kola cviku (série a strany) ---------- */
 .kolo{

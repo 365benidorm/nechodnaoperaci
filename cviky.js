@@ -10,7 +10,6 @@ const VIDEA = {
   ctyri_houpani:  "",
   kyvadlo:        "",
   micek_chodidlo: "",
-  micek_hyzde:    "",
   valec_stehno:   "",
   valec_lytko:    "",
   rucnik_masaz:   "",
@@ -23,7 +22,13 @@ const VIDEA = {
   most:           "",
   lopatky:        "",
   jedna_noha:     "",
-  tandem:         ""
+  tandem:         "",
+  kotniky:        "",
+  ramena:         "",
+  brada:          "",
+  koleno_vsede:   "",
+  prenaseni_vahy: "",
+  hyzde_stisk:    ""
 };
 
 /* ==========================================================================
@@ -311,62 +316,35 @@ const CVIKY = [
   ]
 },
 
-/* ---------- 7 ---------- */
-{
-  id: 'micek_hyzde', nazev: 'Tenisák na hýždě u stěny', kat: 'automasaz', blok: 2,
-  typ: 'cas', cas: { 1: 60, 2: 90, 3: 90 },
-  davka: { 1: '1 minuta každá strana', 2: '90 vteřin každá strana', 3: '90 vteřin každá strana' },
-  pomucky: ['tenisák', 'stěna'],
-  kroky: [
-    'Postav se zády ke stěně, chodidla kousek od ní.',
-    'Vlož tenisák mezi stěnu a hýždi — do masa hýžďového svalu, ne na kost.',
-    'Opři se o něj a pomalu se posouvej do stran a nahoru dolů.',
-    'Tlak řídíš tím, jak moc se opřeš. Kdykoli můžeš ubrat.',
-    'Vyměň strany.'
-  ],
-  pozor: 'U stěny vestoje, ne vleže na zemi. Vestoje máš tlak plně pod kontrolou. Nikdy na kostrč, kyčelní kost ani páteř.',
-  proc: 'Napětí v hýždích souvisí s bolestí kyčle i beder. U stěny je to bezpečná varianta klasického rolování.',
-  faze: [
-    { popis: 'Zády ke stěně', svg: () => panel(FLOOR + WALL +
-        fig(cp(STOJ, { hip: [92, 182], kn: [108, 264], an: [116, 348], toe: [156, 352],
-                       sh: [86, 88], el: [116, 134], hd: [128, 184], head: [86, 66] }))) },
-    { popis: 'Míček do hýždě', svg: () => panel(FLOOR + WALL +
-        fig(cp(STOJ, { hip: [98, 182], kn: [112, 264], an: [118, 348], toe: [158, 352],
-                       sh: [92, 88], el: [122, 134], hd: [134, 184], head: [92, 66] })) +
-        ball(60, 186) + tag(146, 172, 'do svalu, ne na kost')) },
-    { popis: 'Pomalé posouvání', svg: () => panel(FLOOR + WALL +
-        fig(cp(STOJ, { hip: [98, 194], kn: [112, 270], an: [118, 348], toe: [158, 352],
-                       sh: [92, 100], el: [122, 146], hd: [134, 196], head: [92, 78] })) +
-        ball(60, 200) + arrUp(150, 274)) }
-  ]
-},
-
 /* ---------- 8 ---------- */
 {
-  id: 'valec_stehno', nazev: 'Válec pod stehnem vsedě', kat: 'automasaz', blok: 2,
+  id: 'valec_stehno', nazev: 'Válec po stehně vsedě', kat: 'automasaz', blok: 2,
   typ: 'cas', cas: { 1: 60, 2: 90, 3: 90 },
   davka: { 1: '1 minuta každá noha', 2: '90 vteřin každá noha', 3: '90 vteřin každá noha' },
   pomucky: ['masážní válec', 'židle'],
   kroky: [
-    'Sedni si na kraj židle. Válec polož na zem před sebe.',
-    'Polož si stehno na válec tak, že nohu natáhneš dopředu a patu opřeš o zem.',
-    'Rukama si přidržuj válec a pomalu jím přejížděj po přední a boční straně stehna.',
-    'Můžeš i tlačit dlaněmi shora — tak si dávkuješ tlak přesně.',
-    'Vyhni se oblasti kolem kolena a kyčelní kosti.'
+    'Sedni si vzpřímeně na židli, obě chodidla celou plochou na zemi.',
+    'Vezmi válec do obou rukou a polož ho shora na stehno, kousek nad koleno.',
+    'Rukama ho pomalu tlač po stehně nahoru směrem ke kyčli a zase zpět dolů.',
+    'Tlak si řídíš tím, jak silně na válec rukama tlačíš. Má to být příjemné.',
+    'Jeď po přední a vnější straně stehna. Vyměň nohy.'
   ],
-  pozor: 'Nelehej si na válec celou vahou těla. Vsedě máš tlak pod kontrolou a záda zůstávají v klidu.',
-  proc: 'Přední strana stehna táhne za pánev a ovlivňuje kyčel i bedra. Uvolnit se dá bez toho, aby ses na válec položila.',
+  pozor: 'Nelehej si na válec a nedávej ho na zem pod nohu — vsedě s válcem v rukou máš tlak plně pod kontrolou a záda zůstávají v klidu.',
+  proc: 'Přední strana stehna táhne za pánev a ovlivňuje kyčel i bedra. Vsedě to jde uvolnit bez toho, aby se zapojila záda.',
   faze: [
-    { popis: 'Válec pod stehnem', svg: () => panel(FLOOR + CHAIR +
-        fig(cp(SED, { kn: [276, 236], an: [326, 326], toe: [356, 320], hd: [268, 236], el: [222, 172] })) +
-        roller(258, 250, 70)) },
-    { popis: 'Přejíždění nahoru', svg: () => panel(FLOOR + CHAIR +
-        fig(cp(SED, { kn: [276, 236], an: [326, 326], toe: [356, 320], hd: [244, 214], el: [214, 166] })) +
-        roller(232, 226, 70) + arrL(210, 292) + tag(96, 306, 'ke kyčli')) },
-    { popis: 'Přejíždění dolů', svg: () => panel(FLOOR + CHAIR +
-        fig(cp(SED, { kn: [276, 236], an: [326, 326], toe: [356, 320], hd: [290, 254], el: [232, 182] })) +
-        roller(286, 268, 70) + arrR(232, 292) + tag(120, 306, 'ne přes koleno')) }
-  ]
+    { popis: 'Válec polož shora na stehno', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { el: [216, 158], hd: [252, 190] })) + roller(258, 194, 62) +
+        tag(96, 288, 'válec držíš v rukou')) },
+    { popis: 'Tlač ho nahoru ke kyčli', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { el: [204, 150], hd: [228, 186] })) + roller(226, 192, 62) +
+        arrL(208, 268) + tag(110, 288, 'směrem ke kyčli')) },
+    { popis: 'A pomalu zpět nad koleno', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { el: [226, 166], hd: [262, 194] })) + roller(272, 198, 62) +
+        arrR(230, 268) + tag(120, 288, 'ne přes koleno')) }
+  ],
+  spatne: { popis: 'Válec na zemi pod nohou', svg: () => panel(FLOOR + CHAIR +
+      fig(cp(SED, { bad: true, kn: [276, 232], an: [330, 322], toe: [356, 314] })) +
+      roller(300, 330, 70) + cross(300, 70) + tag(88, 288, 'tlak neuhlídáš', true), true) }
 },
 
 /* ---------- 9 ---------- */
@@ -713,6 +691,158 @@ const CVIKY = [
   ]
 },
 
+/* ---------- BEZ POMŮCEK ----------
+   Cviky, na které stačí židle nebo opora rukou. Jsou v každé lekci,
+   aby mamka nebyla závislá na míčku, válci ani volné stěně. */
+{
+  id: 'kotniky', nazev: 'Špičky a paty vsedě', kat: 'rozhybani', blok: 1, vzdy: true,
+  typ: 'cas', cas: { 1: 45, 2: 60, 3: 60 },
+  davka: { 1: '45 vteřin', 2: '1 minuta', 3: '1 minuta' },
+  pomucky: ['židle'],
+  kroky: [
+    'Sedni si vzpřímeně na židli, obě chodidla celou plochou na zemi.',
+    'Zvedni špičky obou nohou nahoru, paty nechej na zemi.',
+    'Polož špičky zpět a naopak zvedni paty — přejdeš na špičky.',
+    'Střídej klidným tempem, jako bys šlapala na místě vsedě.',
+    'Kolena a stehna zůstávají v klidu, pohyb je jen v kotnících.'
+  ],
+  pozor: 'Klidné tempo, žádné dupání. Když ucítíš křeč v lýtku, zpomal a zmenši rozsah.',
+  proc: 'Rozhýbe kotníky a rozproudí krev v nohách. Kotníky patří k tomu, co drží rovnováhu při zakopnutí.',
+  faze: [
+    { popis: 'Sed, chodidla na zemi', svg: () => panel(FLOOR + CHAIR + fig(SED)) },
+    { popis: 'Zvedni špičky', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { toe: [302, 326] })) + arrUp(330, 320) + tag(110, 288, 'paty zůstávají')) },
+    { popis: 'Pak zvedni paty', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { an: [268, 330], toe: [306, 348] })) + arrUp(200, 320) + tag(96, 288, 'špičky zůstávají')) }
+  ]
+},
+{
+  id: 'ramena', nazev: 'Kroužení rameny vsedě', kat: 'rozhybani', blok: 1, vzdy: true,
+  typ: 'cas', cas: { 1: 45, 2: 60, 3: 60 },
+  davka: { 1: '45 vteřin', 2: '1 minuta', 3: '1 minuta' },
+  pomucky: ['židle'],
+  kroky: [
+    'Sedni si vzpřímeně, paže volně podél těla.',
+    'Zvedni obě ramena nahoru k uším.',
+    'Táhni je dozadu a přitom hrudník otevři.',
+    'Nech je klesnout dolů a vrať dopředu — tím je kruh hotový.',
+    'Krouži pomalu a plynule, dýchej u toho.'
+  ],
+  pozor: 'Nezaklánět hlavu a neprohýbat bedra. Pohyb dělají jen ramena.',
+  proc: 'Uvolní šíji a otevře hrudník, který se po zlomeninách obratlů uzavírá dopředu.',
+  faze: [
+    { popis: 'Ramena volně', svg: () => panel(FLOOR + CHAIR + fig(SED)) },
+    { popis: 'Nahoru k uším', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { sh: [190, 98], el: [214, 150], hd: [250, 190] })) + arrUp(150, 180) +
+        tag(96, 288, 'jen ramena, ne hlava')) },
+    { popis: 'Dozadu a dolů', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { sh: [182, 118], el: [206, 168], hd: [244, 198], cue: true })) +
+        arrL(160, 180) + tag(110, 288, 'hrudník otevři')) }
+  ]
+},
+{
+  id: 'brada', nazev: 'Zatažení brady', kat: 'rozhybani', blok: 1, vzdy: true,
+  typ: 'opak', opak: { 1: 8, 2: 10, 3: 12 },
+  davka: { 1: '8 opakování', 2: '10 opakování', 3: '12 opakování' },
+  pomucky: ['židle'],
+  kroky: [
+    'Sedni si vzpřímeně, ramena dole, pohled rovně před sebe.',
+    'Zataj bradu dozadu, jako by sis chtěla udělat dvojitou bradu.',
+    'Hlava se přitom neklopí dolů ani nezaklání — jede vodorovně vzad.',
+    'Vydrž tři vteřiny a povol.',
+    'Opakuj klidně, bez tlačení do bolesti.'
+  ],
+  pozor: 'Hlava jde dozadu, ne dolů. Když ucítíš závrať nebo mravenčení do rukou, přestaň.',
+  proc: 'Vyrovnává předsunuté držení hlavy, které se po zlomeninách obratlů prohlubuje a přetěžuje šíji.',
+  faze: [
+    { popis: 'Hlava předsunutá', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { head: [214, 86] })) + tag(96, 288, 'takhle to většinou vypadá')) },
+    { popis: 'Zataj bradu vzad', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { head: [188, 86], cue: true })) + arrL(226, 76) +
+        dash([188, 62], [188, 112]) + tag(110, 288, 'vodorovně, ne dolů')) },
+    { popis: 'Vydrž tři vteřiny', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { head: [188, 86] })) + tag(130, 288, 'a povol')) }
+  ],
+  spatne: { popis: 'Hlava klesla dolů', svg: () => panel(FLOOR + CHAIR +
+      fig(cp(SED, { bad: true, head: [206, 106], curve: [186, 150] })) +
+      cross(300, 66) + tag(96, 288, 'brada k hrudníku — ne', true), true) }
+},
+{
+  id: 'koleno_vsede', nazev: 'Natažení kolene vsedě', kat: 'sila', blok: 1, vzdy: true,
+  typ: 'opak', opak: { 1: 8, 2: 10, 3: 12 },
+  davka: { 1: '8× každá noha', 2: '10× každá noha', 3: '12× každá noha' },
+  pomucky: ['židle'],
+  kroky: [
+    'Sedni si vzpřímeně, opři se zády o opěradlo.',
+    'Pomalu natáhni jednu nohu dopředu, dokud není skoro rovná.',
+    'Nahoře přitáhni špičku k sobě a vydrž dvě vteřiny.',
+    'Pomalu spouštěj zpět, počítej do tří.',
+    'Odcvič celou sérii, pak vyměň nohy.'
+  ],
+  pozor: 'Koleno nepropínej silou do krajní polohy. Když to v koleni bolí, jdi jen do poloviny rozsahu.',
+  proc: 'Posílí přední stranu stehna, která drží koleno. Silné stehno je nejlepší ochrana bolavého kolena a pomáhá i při vstávání.',
+  faze: [
+    { popis: 'Sed opřená o opěradlo', svg: () => panel(FLOOR + CHAIR + fig(SED)) },
+    { popis: 'Natáhni nohu dopředu', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { kn: [270, 210], an: [340, 222], toe: [352, 196], cue: true })) +
+        arrUp(320, 300) + tag(96, 288, 'špičku k sobě')) },
+    { popis: 'Spouštěj pomalu — tři vteřiny', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { kn: [270, 212], an: [312, 282], toe: [340, 296] })) +
+        tag(110, 320, 'počítej do tří')) }
+  ]
+},
+{
+  id: 'prenaseni_vahy', nazev: 'Přenášení váhy ve stoje', kat: 'rovnovaha', blok: 1, vzdy: true,
+  typ: 'cas', cas: { 1: 45, 2: 60, 3: 60 },
+  davka: { 1: '45 vteřin', 2: '1 minuta', 3: '1 minuta' },
+  pomucky: ['kuchyňská linka'],
+  kroky: [
+    'Postav se čelem k lince, chodidla na šířku pánve, lehce se přidrž.',
+    'Pomalu přenes váhu na levou nohu, pravou jen odlehči — nezvedej ji.',
+    'Chvíli vydrž a přenes váhu na pravou nohu.',
+    'Trup drž vzpřímený, pohled dopředu.',
+    'Střídej pomalu, ať to pokaždé ucítíš v celém chodidle.'
+  ],
+  pozor: 'Nohy zůstávají na zemi obě. Tohle není stoj na jedné noze, jen přenášení váhy.',
+  proc: 'Nejjemnější trénink rovnováhy, jaký existuje. Připravuje na stoj na jedné noze a jde dělat i ve dnech, kdy si na víc netroufáš.',
+  faze: [
+    { popis: 'Postoj u linky', svg: () => panel(FLOOR + LINKA_R +
+        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [276, 136], hd: [304, 190], head: [241, 64] }))) },
+    { popis: 'Váha doleva', svg: () => panel(FLOOR + LINKA_R +
+        fig(cp(STOJ, { hip: [232, 180], kn: [230, 262], an: [228, 348], toe: [266, 352],
+                       kn2: [262, 262], an2: [268, 348], toe2: [306, 352],
+                       sh: [230, 86], el: [268, 136], hd: [302, 190], head: [229, 64] })) +
+        arrL(200, 292) + tag(70, 250, 'obě nohy na zemi')) },
+    { popis: 'Váha doprava', svg: () => panel(FLOOR + LINKA_R +
+        fig(cp(STOJ, { hip: [262, 180], kn: [264, 262], an: [266, 348], toe: [304, 352],
+                       kn2: [232, 262], an2: [228, 348], toe2: [266, 352],
+                       sh: [258, 86], el: [286, 136], hd: [308, 190], head: [257, 64] })) +
+        arrR(196, 292) + tag(70, 250, 'pomalu a plynule')) }
+  ]
+},
+{
+  id: 'hyzde_stisk', nazev: 'Stisk hýždí vsedě', kat: 'sila', blok: 2, vzdy: true,
+  typ: 'opak', opak: { 1: 8, 2: 10, 3: 12 },
+  davka: { 1: '8× výdrž 5 vteřin', 2: '10× výdrž 5 vteřin', 3: '12× výdrž 5 vteřin' },
+  pomucky: ['židle'],
+  kroky: [
+    'Sedni si vzpřímeně, chodidla na zemi na šířku pánve.',
+    'Stiskni hýždě k sobě, jako bys mezi nimi něco držela.',
+    'Stiskni zhruba na 70 % síly, ne naplno.',
+    'Drž pět vteřin a normálně u toho dýchej — nezadržuj dech.',
+    'Povol a chvíli počkej, než zopakuješ.'
+  ],
+  pozor: 'Nezadržuj dech a neprohýbej bedra. Pracují jen hýždě, zbytek těla se nehne.',
+  proc: 'Probudí hýžďové svaly, které při dlouhém sezení usínají. Drží pánev při chůzi a pomáhají bolavé kyčli.',
+  faze: [
+    { popis: 'Sed vzpřímeně', svg: () => panel(FLOOR + CHAIR + fig(SED)) },
+    { popis: 'Stiskni a drž pět vteřin', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { cue: true })) + arrR(120, 208) + arrL(190, 208) +
+        tag(96, 288, 'dýchej, nezadržuj')) },
+    { popis: 'Povol', svg: () => panel(FLOOR + CHAIR + fig(SED) + tag(130, 288, 'a znovu')) }
+  ]
+},
+
 /* ---------- 20 ---------- */
 {
   id: 'tandem', nazev: 'Tandem chůze u linky', kat: 'rovnovaha', blok: 3,
@@ -764,7 +894,6 @@ const KOLA = {
   ctyri_houpani:  { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
   kyvadlo:        { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
   micek_chodidlo: { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
-  micek_hyzde:    { strany: 2, serie: { 1: 1, 2: 1, 3: 1 }, slovo: 'strana' },
   valec_stehno:   { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
   valec_lytko:    { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
   rucnik_masaz:   { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
@@ -777,7 +906,13 @@ const KOLA = {
   most:           { strany: 1, serie: { 1: 1, 2: 1, 3: 2 } },
   lopatky:        { strany: 1, serie: { 1: 1, 2: 1, 3: 2 } },
   jedna_noha:     { strany: 2, serie: { 1: 3, 2: 3, 3: 3 } },
-  tandem:         { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } }
+  tandem:         { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  kotniky:        { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  ramena:         { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  brada:          { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  koleno_vsede:   { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
+  prenaseni_vahy: { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  hyzde_stisk:    { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } }
 };
 
 /* přilepit ke cvikům, ať je to na jednom místě */

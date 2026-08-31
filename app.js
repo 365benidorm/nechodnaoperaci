@@ -3,13 +3,13 @@
    Sem vlož adresu nasazené Apps Script webové aplikace (viz apps-script.gs).
    Necháš-li prázdné, appka funguje normálně, jen se nic neodesílá.
    ========================================================================== */
-const SYNC_URL = "";
+const SYNC_URL_VYCHOZI = "https://script.google.com/macros/s/AKfycbzQuEOFL1Jy9sCt5-x-MYCXobG8pupvOMnoxFSB3IsU0Utp-Qd2VOKtj69tgKdhxbkc/exec";
 const KDO = "Máma";
 
 /* Označení verze. Až budeš něco měnit, přepiš datum — objeví se dole
    v Nastavení a posílá se s každým záznamem do Sheetu, takže na dálku
    poznáš, jestli mamce nová verze skutečně dojela. */
-const VERZE_APP = "2026-08-04";
+const VERZE_APP = "2026-08-31";
 
 /* stav automatické aktualizace — musí být deklarované dřív, než poprvé
    proběhne render(), jinak appka spadne na temporal dead zone */
@@ -79,13 +79,13 @@ function odemcene() {
    je zhruba polovina a okno se posouvá, takže se všechny prostřídají. */
 function aktivni() {
   const vse = odemcene();
-  const rot = vse.filter(c => c.kat === ROTUJE);
+  const rot = vse.filter(c => c.kat === ROTUJE && !c.vzdy);
   if (rot.length < 3) return vse;
   const kolik = Math.ceil(rot.length / 2);
   const posun = den() % rot.length;
   const dnesni = [];
   for (let i = 0; i < kolik; i++) dnesni.push(rot[(posun + i) % rot.length]);
-  return vse.filter(c => c.kat !== ROTUJE || dnesni.indexOf(c) !== -1);
+  return vse.filter(c => c.kat !== ROTUJE || c.vzdy || dnesni.indexOf(c) !== -1);
 }
 
 function davka(c) { return c.davka[blok()] || c.davka[3]; }
@@ -122,6 +122,8 @@ function odhadMinut(list) {
 }
 
 /* ========================== ZÁZNAM A ODESLÁNÍ =========================== */
+function syncUrl() { return (store.get('syncUrl', '') || SYNC_URL_VYCHOZI || '').trim(); }
+
 function log() { return store.get('log', {}); }
 function hotovoDnes() { return (log()[dnes()] || []); }
 function zapis(id) {
@@ -129,6 +131,23 @@ function zapis(id) {
   l[d] = l[d] || [];
   if (l[d].indexOf(id) === -1) l[d].push(id);
   store.set('log', l);
+  posliSouhrn();
+}
+
+/* Souhrn dne se posílá po každém odcvičeném cviku, ne až na konci lekce.
+   Dřív se odesílalo jen z dokončovací obrazovky — když ji mamka nedošla,
+   nedorazilo nic. Skript si u každého data nechá poslední řádek. */
+let SOUHRN_T = null;
+function posliSouhrn() {
+  clearTimeout(SOUHRN_T);
+  SOUHRN_T = setTimeout(() => {
+    const hot = hotovoDnes();
+    odesli({
+      kdo: KDO, datum: dnes(), tyden: tyden(), blok: blok(),
+      hotovo: hot.length, celkem: aktivni().length,
+      cviky: hot.join(', '), verze: VERZE_APP
+    });
+  }, 1500);
 }
 function serie() {
   let n = 0; const l = log();
@@ -147,19 +166,19 @@ function poslednich7() {
   return out;
 }
 function odesli(payload) {
-  if (!SYNC_URL) return;
+  if (!syncUrl()) return;
   const fronta = store.get('fronta', []);
   fronta.push(payload);
   store.set('fronta', fronta);
   poslatFrontu();
 }
 function poslatFrontu() {
-  if (!SYNC_URL) return;
+  if (!syncUrl()) return;
   const fronta = store.get('fronta', []);
   if (!fronta.length || !navigator.onLine) return;
   const kopie = fronta.slice();
   store.set('fronta', []);
-  Promise.all(kopie.map(p => fetch(SYNC_URL, {
+  Promise.all(kopie.map(p => fetch(syncUrl(), {
     method: 'POST', mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(p)
@@ -426,7 +445,13 @@ function popisStartu() {
   if (SES.faze === 'cte') return 'Přeskočit čtení';
   if (SES.faze === 'bezi') return 'Pauza';
   if (SES.faze === 'pauza') return 'Pokračovat';
-  if (SES.faze === 'pocita') return 'Cvič — a odpočítávej níž';
+  if (SES.faze === 'pocita') {
+    const p = popisKola(c, SES.kolo);
+    return p ? 'Hotovo — ' + p : 'Hotovo — série odcvičena';
+  }
+  if (SES.faze === 'hotovo') {
+    return SES.idx === SES.list.length - 1 ? 'Hotovo — ukončit lekci' : 'Hotovo — další cvik';
+  }
   const p = popisKola(c, SES.kolo);
   return p ? 'Spustit — ' + p : 'Spustit';
 }
@@ -435,15 +460,13 @@ function viewLekce() {
   if (!SES) { zacniLekci(); return; }
   if (SES.idx >= SES.list.length) return viewHotovo();
   const c = SES.list[SES.idx];
-  lista(`${SES.idx + 1} z ${SES.list.length}`, '#/', 'Ukončit');
   stopTik();
   SES.zbylo = trvaniS(c);
-  SES.opak = 0;
   SES.bezi = false;
   SES.faze = 'stoji';
+  listaLekce();
 
   const kol = pocetKol(c);
-  const popis = popisKola(c, SES.kolo);
 
   app.innerHTML = `
     <div class="prog">${SES.list.map((_, i) => `<i class="${i <= SES.idx ? 'on' : ''}"></i>`).join('')}</div>
@@ -452,29 +475,34 @@ function viewLekce() {
     ${c.pomucky.map(p => `<span class="tagline">${esc(p)}</span>`).join('')}
 
     <div class="card" style="padding:14px 18px 18px">
-      ${kol > 1 ? `<div class="kolo" id="kolo">${esc(popis)}</div>
+      ${kol > 1 ? `<div class="kolo" id="kolo">${esc(popisKola(c, SES.kolo))}</div>
         <div class="kolapruh">${[...Array(kol)].map((_, i) =>
           `<i class="${i < SES.kolo ? 'hotovo' : (i === SES.kolo ? 'ted' : '')}"></i>`).join('')}</div>` : ''}
       ${c.typ === 'cas'
         ? `<div class="timer" id="tmr">${fmt(SES.zbylo)}</div>`
-        : `<div class="counter" id="cnt">0 z ${cilOpak(c)}</div>`}
+        : `<div class="counter" id="cnt">${esc(cilOpak(c))}× opakování</div>`}
       <button class="btn" id="bstart" style="margin-top:14px" onclick="tlacitkoStart()">${esc(popisStartu())}</button>
-      ${c.typ === 'cas'
-        ? `<button class="btn ghost small" onclick="resetTimer()">Vynulovat</button>`
-        : `<div class="row"><button class="btn ghost small" onclick="pridejOpak(1)">+ 1 opakování</button>
-           <button class="btn ghost small" onclick="pridejOpak(-1)">−</button></div>`}
+      ${c.typ === 'cas' ? `<button class="btn ghost small" id="breset" onclick="resetTimer()">Vynulovat</button>` : ''}
     </div>
 
     ${detailBody(c, true)}
 
     <div class="patka">
-      <button class="btn" onclick="dalsi(true)">${SES.idx === SES.list.length - 1 ? 'Hotovo — ukončit lekci' : 'Hotovo — další cvik'}</button>
-      <div class="row">
-        <button class="btn ghost small" onclick="zpetNaPredchozi()" ${SES.idx === 0 ? 'disabled' : ''}>← Předchozí cvik</button>
-        <button class="btn ghost small" onclick="dalsi(false)">Dnes vynechat</button>
-      </div>
+      <button class="btn ghost small" onclick="zpetNaPredchozi()" ${SES.idx === 0 ? 'disabled' : ''}>← Předchozí cvik</button>
+      <button class="btn ghost small" onclick="dalsi(false)">Dnes vynechat</button>
     </div>
   `;
+}
+
+/* Záhlaví lekce: zůstává nahoře, aby mamka nemusela scrollovat.
+   Tlačítko vpravo ukončuje CELÝ cvik, ne jen sérii. */
+function listaLekce() {
+  if (!SES || SES.idx >= SES.list.length) return;
+  const posledni = SES.idx === SES.list.length - 1;
+  bar.innerHTML =
+    `<button class="back" onclick="location.hash='#/'">‹ Ukončit</button>` +
+    `<div class="t">${SES.idx + 1} z ${SES.list.length}</div>` +
+    `<button class="hotovo" onclick="dalsi(true)">${posledni ? 'Konec ✓' : 'Hotovo ✓'}</button>`;
 }
 
 function prekresliKolo() {
@@ -486,24 +514,24 @@ function prekresliKolo() {
   });
   const t = document.getElementById('tmr');
   if (t) { t.textContent = fmt(trvaniS(c)); t.classList.remove('done'); }
-  const n = document.getElementById('cnt');
-  if (n) n.textContent = '0 z ' + cilOpak(c);
-  SES.zbylo = trvaniS(c); SES.opak = 0;
+  SES.zbylo = trvaniS(c);
   obnovTlacitko();
 }
 function obnovTlacitko() {
   const b = document.getElementById('bstart');
   if (!b) return;
   b.textContent = popisStartu();
-  // ve fázi počítání se nemá co mačkat — počítá se tlačítky pod tím
-  b.disabled = (SES.faze === 'pocita');
-  b.classList.toggle('ghost', SES.faze === 'pocita');
+  b.disabled = false;
+  b.classList.remove('ghost');
+  const r = document.getElementById('breset');
+  if (r) r.style.display = (SES.faze === 'hotovo') ? 'none' : '';
 }
 
 const fmt = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 function stopTik() { if (TIK) { clearInterval(TIK); TIK = null; } }
 function resetTimer() {
   stopTik(); zastavCteni();
+  if (SES) clearTimeout(SES.pojistka);
   SES.bezi = false; SES.faze = 'stoji';
   SES.zbylo = trvaniS(SES.list[SES.idx]);
   const t = document.getElementById('tmr');
@@ -511,36 +539,32 @@ function resetTimer() {
   obnovTlacitko();
 }
 
-/* Jedno tlačítko na všechny stavy: spustit / přeskočit čtení / pauza / pokračovat. */
+/* Jedno tlačítko pro všechny stavy kola. */
 function tlacitkoStart() {
-  if (SES.faze === 'cte') { clearTimeout(SES.pojistka); zastavCteni(); poGongu(); return; }   // přeskočit výklad
-  if (SES.faze === 'bezi') {                                       // pauza
-    stopTik(); SES.bezi = false; SES.faze = 'pauza'; obnovTlacitko(); return;
-  }
-  if (SES.faze === 'pauza') { rozjedCas(); return; }               // pokračovat
-
-  // nové kolo: nejdřív čtení, pak gong, teprve pak čas
-  drzObrazovku();
   const c = SES.list[SES.idx];
+  if (SES.faze === 'cte') { clearTimeout(SES.pojistka); zastavCteni(); poGongu(); return; }
+  if (SES.faze === 'bezi') { stopTik(); SES.bezi = false; SES.faze = 'pauza'; obnovTlacitko(); return; }
+  if (SES.faze === 'pauza') { rozjedCas(); return; }
+  if (SES.faze === 'pocita') { cink(); dokonciKolo(); return; }   // ruční potvrzení série
+  if (SES.faze === 'hotovo') { dalsi(true); return; }             // celý cvik odcvičen
+
+  drzObrazovku();
   const cist = TTS && AKT_CVIK && store.get('cistPriStartu', true);
   if (!cist) { poGongu(); return; }
   SES.faze = 'cte';
   obnovTlacitko();
-  // pojistka: kdyby hlas zamrzl uprostřed věty, po 45 s se pokračuje bez něj
   clearTimeout(SES.pojistka);
   SES.pojistka = setTimeout(() => {
     if (SES && SES.faze === 'cte') { zastavCteni(); poGongu(); }
   }, 45000);
-  // spouštíme přímo v reakci na dotyk, jinak mobil řeč zablokuje
   spustCteni(SES.kolo > 0, () => poGongu());
 }
 
-/* Gong a rozjezd kola. */
 function poGongu() {
   if (SES) clearTimeout(SES.pojistka);
   cinkStart();
   const c = SES.list[SES.idx];
-  if (c.typ === 'cas') { setTimeout(() => rozjedCas(), 900); }
+  if (c.typ === 'cas') setTimeout(() => rozjedCas(), 900);
   else { SES.faze = 'pocita'; obnovTlacitko(); }
 }
 
@@ -550,7 +574,6 @@ function rozjedCas() {
   SES.bezi = true; SES.faze = 'bezi';
   obnovTlacitko();
   drzObrazovku();
-
   const konec = Date.now() + SES.zbylo * 1000;
   let varovano = false;
   stopTik();
@@ -565,29 +588,25 @@ function rozjedCas() {
       stopTik(); SES.bezi = false;
       t.classList.add('done');
       cink();
-      dalsiKolo();
+      dokonciKolo();
     }
   }, 200);
 }
 
-/* Konec kola: buď posun na další, nebo hotový cvik. */
-function dalsiKolo() {
+/* Konec jednoho kola: buď se posuneme na další, nebo je cvik hotový.
+   Cvik se zapíše jako odcvičený tady — ne až stiskem tlačítka v záhlaví. */
+function dokonciKolo() {
   const c = SES.list[SES.idx];
-  SES.faze = 'stoji';
   if (SES.kolo + 1 < pocetKol(c)) {
     SES.kolo++;
-    setTimeout(() => { prekresliKolo(); }, 1400);
+    SES.faze = 'stoji';
+    setTimeout(() => { if (SES) prekresliKolo(); }, 1200);
   } else {
+    SES.faze = 'hotovo';
+    zapis(c.id);
     obnovTlacitko();
+    listaLekce();
   }
-}
-
-function pridejOpak(n) {
-  const c = SES.list[SES.idx], cil = cilOpak(c);
-  SES.opak = Math.min(cil, Math.max(0, SES.opak + n));
-  const el = document.getElementById('cnt');
-  if (el) el.textContent = SES.opak + ' z ' + cil;
-  if (SES.opak === cil && n > 0) { cink(); dalsiKolo(); }
 }
 
 function odeber(id) {
@@ -631,11 +650,7 @@ let POSLANO = null;
 function viewHotovo() {
   lista('Hotovo', '#/');
   const hot = hotovoDnes(), list = aktivni();
-  const klic = dnes() + ':' + hot.length;
-  if (POSLANO !== klic) {
-    POSLANO = klic;
-    odesli({ kdo: KDO, datum: dnes(), tyden: tyden(), blok: blok(), hotovo: hot.length, celkem: list.length, cviky: hot.join(', '), verze: VERZE_APP });
-  }
+  posliSouhrn();
   SES = null;
   app.innerHTML = `
     <div class="hero" style="margin-top:24px">
@@ -781,9 +796,14 @@ function viewNastaveni() {
     <button class="btn ghost small" onclick="ukazkaCteni()">Přehrát ukázku</button>` : ''}
 
     <h2>Odesílání pokroku</h2>
-    <p class="meta">${SYNC_URL
-      ? 'Po každé lekci se odešle souhrn (datum, počet cviků). Neodesílá se nic jiného.'
-      : 'Zatím vypnuto. Adresa se nastavuje v souboru app.js na prvním řádku.'}</p>
+    <p class="meta">${syncUrl()
+      ? 'Po každém odcvičeném cviku se odešle souhrn dne (datum, počet cviků). Nic jiného.'
+      : 'Vypnuto — chybí adresa.'}</p>
+    <input type="url" id="syncin" placeholder="https://script.google.com/.../exec"
+      value="${esc(store.get('syncUrl', '') || '')}"
+      onchange="store.set('syncUrl', this.value.trim()); viewNastaveni();">
+    <p class="meta" style="font-size:15px;margin-top:8px">Prázdné pole = použije se adresa zabudovaná v appce.</p>
+    <button class="btn ghost small" onclick="testOdeslani(this)">Odeslat zkušební záznam</button>
 
     <h2>Čtení při spuštění časovače</h2>
     <p class="meta">Když se spustí časovač, appka sama přečte postup cviku. Při dalším spuštění
@@ -846,6 +866,13 @@ function nactiZnovu() {
 }
 function zkusAktualizovat() {
   if (REG) REG.update().catch(() => { });
+}
+function testOdeslani(btn) {
+  if (!syncUrl()) { if (btn) btn.textContent = 'Chybí adresa'; return; }
+  if (btn) { btn.textContent = 'Odesílám…'; btn.disabled = true; }
+  odesli({ kdo: KDO, datum: dnes(), tyden: tyden(), blok: blok(),
+           hotovo: 0, celkem: 0, cviky: 'ZKOUŠKA', verze: VERZE_APP });
+  setTimeout(() => { if (btn) { btn.textContent = 'Odesláno — mrkni do tabulky'; btn.disabled = false; } }, 1200);
 }
 function rucniAktualizace(btn) {
   if (btn) { btn.textContent = 'Hledám…'; btn.disabled = true; }
