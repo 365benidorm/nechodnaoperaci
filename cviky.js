@@ -33,7 +33,12 @@ const VIDEA = {
   paty_odsun:     "",
   ctyri_ruka:     "",
   prkno_linka:    "",
-  dlan_koleno:    ""
+  dlan_koleno:    "",
+  guma_veslo:     "",
+  guma_koleno:    "",
+  guma_kolena_ven: "",
+  guma_rotace_ramen: "",
+  guma_kroky:     ""
 };
 
 /* ==========================================================================
@@ -504,7 +509,7 @@ const CVIKY = [
 
 /* ---------- 14 ---------- */
 {
-  id: 'unozeni', nazev: 'Únožení s gumou', kat: 'sila', blok: 3,
+  id: 'unozeni', nazev: 'Únožení s gumou', kat: 'sila', blok: 1,
   typ: 'opak', opak: { 1: 8, 2: 10, 3: 12 },
   davka: { 1: '8× každá noha', 2: '10× každá noha', 3: '2× 12 každá noha' },
   pomucky: ['žlutá guma', 'kuchyňská linka'],
@@ -640,7 +645,7 @@ const CVIKY = [
 
 /* ---------- 18 ---------- */
 {
-  id: 'lopatky', nazev: 'Odtah lopatek s gumou', kat: 'sila', blok: 3,
+  id: 'lopatky', nazev: 'Odtah lopatek s gumou', kat: 'sila', blok: 1,
   typ: 'opak', opak: { 1: 8, 2: 10, 3: 12 },
   davka: { 1: '8 opakování', 2: '10 opakování', 3: '2× 12 opakování' },
   pomucky: ['žlutá guma', 'židle'],
@@ -1006,6 +1011,170 @@ const CVIKY = [
       cross(300, 66) + tag(96, 292, 'kroucení — ne', true), true) }
 },
 
+/* ---------- S GUMOU ----------
+   Odpor gumy roste plynule a nedá se s ní páteř zatížit shora, proto je to
+   pro křehkou páteř bezpečnější nářadí než závaží. Žádný z těchto cviků
+   neohýbá ani nekroutí trup. */
+{
+  id: 'guma_veslo', nazev: 'Veslování vsedě s gumou', kat: 'sila', blok: 1, vzdy: true,
+  typ: 'opak', opak: { 1: 8, 2: 10, 3: 12 },
+  davka: { 1: '8 opakování', 2: '10 opakování', 3: '2× 12 opakování' },
+  pomucky: ['žlutá guma', 'židle'],
+  kroky: [
+    'Sedni si na kraj židle, obě chodidla na zemi, záda rovná.',
+    'Přehoď gumu přes obě chodidla a konce chyť do rukou. Paže natažené dopředu.',
+    'Táhni lokty dozadu podél těla a lopatky přitáhni k sobě.',
+    'Trup zůstává vzpřímený — nezaklánět se dozadu, tah dělají jen paže a záda.',
+    'Pomalu povol zpět. Nenech gumu, aby tě táhla dopředu.'
+  ],
+  pozor: 'Nezaklánět trup a nepředklánět se pro gumu. Když se záda hýbou, je guma moc napnutá — povol ji tím, že ji budeš držet dál od chodidel.',
+  proc: 'Posílí mezilopatkové a zádové svaly, které drží hrudní páteř vzpřímenou. Po zlomeninách obratlů je právě tohle to, co brání dalšímu hroucení dopředu.',
+  faze: [
+    { popis: 'Guma přes chodidla, paže vpřed', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { el: [222, 168], hd: [268, 210] })) + band([272, 214], [286, 344], 22) +
+        tag(90, 292, 'záda rovná')) },
+    { popis: 'Táhni lokty dozadu', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { el: [176, 152], hd: [214, 196], cue: true })) + band([218, 200], [286, 344], 34) +
+        arrL(170, 240) + tag(96, 292, 'lopatky k sobě')) },
+    { popis: 'Pomalu povol', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { el: [222, 168], hd: [268, 210] })) + band([272, 214], [286, 344], 22) +
+        arrR(206, 240)) }
+  ],
+  spatne: { popis: 'Záklon trupu za gumou', svg: () => panel(FLOOR + CHAIR +
+      fig(cp(SED, { bad: true, sh: [172, 132], el: [154, 178], hd: [196, 212],
+                    head: [162, 112], curve: [166, 168] })) + band([200, 216], [286, 344], 30) +
+      cross(300, 62) + tag(90, 292, 'trup se nezaklání', true), true) }
+},
+{
+  id: 'guma_koleno', nazev: 'Natažení kolene s gumou', kat: 'sila', blok: 1, vzdy: true,
+  typ: 'opak', opak: { 1: 8, 2: 10, 3: 12 },
+  davka: { 1: '8× každá noha', 2: '10× každá noha', 3: '12× každá noha' },
+  pomucky: ['žlutá guma', 'židle'],
+  kroky: [
+    'Sedni si vzpřímeně a opři se zády o opěradlo.',
+    'Gumu několikrát obtoč kolem obou kotníků, aby byla mírně napnutá.',
+    'Jednu nohu nechej stát na zemi a druhou pomalu natahuj dopředu proti gumě.',
+    'Nahoře přitáhni špičku k sobě a vydrž dvě vteřiny.',
+    'Spouštěj pomalu, počítej do tří. Pak vyměň nohy.'
+  ],
+  pozor: 'Guma nikdy uzlem — v uzlu časem praskne. Obtoč ji. A koleno nepropínej silou do krajní polohy.',
+  proc: 'Totéž co natažení kolene bez gumy, ale s odporem. Silné stehno je nejlepší ochrana bolavého kolena a nejvíc pomáhá při vstávání ze židle.',
+  faze: [
+    { popis: 'Guma obtočená kolem kotníků', svg: () => panel(FLOOR + CHAIR +
+        fig(SED) + band([258, 344], [282, 344], 10) + tag(88, 292, 'obtočit, ne uvázat')) },
+    { popis: 'Natáhni nohu proti gumě', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { kn: [270, 210], an: [340, 222], toe: [352, 196], cue: true })) +
+        band([262, 344], [338, 226], 26) + arrUp(316, 300) + tag(88, 292, 'špičku k sobě')) },
+    { popis: 'Spouštěj pomalu', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { kn: [270, 212], an: [312, 282], toe: [340, 296] })) +
+        band([262, 344], [310, 286], 16) + tag(96, 320, 'počítej do tří')) }
+  ]
+},
+{
+  id: 'guma_kolena_ven', nazev: 'Roztlačování kolen s gumou', kat: 'sila', blok: 1, vzdy: true, pohled: 'zpředu',
+  typ: 'opak', opak: { 1: 8, 2: 10, 3: 12 },
+  davka: { 1: '8× výdrž 3 vteřiny', 2: '10× výdrž 3 vteřiny', 3: '12× výdrž 5 vteřin' },
+  pomucky: ['žlutá guma', 'židle'],
+  kroky: [
+    'Sedni si vzpřímeně, chodidla na zemi na šířku pánve.',
+    'Gumu několikrát obtoč kolem obou stehen, kousek nad koleny.',
+    'Pomalu roztlač kolena od sebe proti odporu gumy.',
+    'Chodidla zůstávají na zemi a trup se nenaklání dozadu.',
+    'Vydrž tři vteřiny a pomalu povol — nenech kolena spadnout k sobě.'
+  ],
+  pozor: 'Nezadržuj dech a neopírej se dozadu. Když guma tlačí moc, uber jednu otočku.',
+  proc: 'Střední hýžďový sval drží pánev při každém kroku. Vsedě ho posílíš bez toho, abys musela stát a hlídat rovnováhu.',
+  faze: [
+    { popis: 'Guma nad koleny', svg: () => panel(FLOOR + ZIDLE_F +
+        figF({ head: [200, 84], sh: [200, 124], hip: [200, 224],
+               elL: [166, 166], hdL: [172, 216], elR: [234, 166], hdR: [228, 216],
+               knL: [176, 258], anL: [172, 338], knR: [224, 258], anR: [228, 338] }) +
+        band([176, 250], [224, 250], 6) + tag(104, 146, 'pohled zpředu')) },
+    { popis: 'Roztlač kolena od sebe', svg: () => panel(FLOOR + ZIDLE_F +
+        figF({ head: [200, 84], sh: [200, 124], hip: [200, 224], cue: true,
+               elL: [166, 166], hdL: [172, 216], elR: [234, 166], hdR: [228, 216],
+               knL: [150, 260], anL: [166, 338], knR: [250, 260], anR: [234, 338] }) +
+        band([150, 252], [250, 252], 14) + arrL(120, 258) + arrR(280, 258) +
+        tag(96, 318, 'chodidla zůstávají')) },
+    { popis: 'Pomalu povol', svg: () => panel(FLOOR + ZIDLE_F +
+        figF({ head: [200, 84], sh: [200, 124], hip: [200, 224],
+               elL: [166, 166], hdL: [172, 216], elR: [234, 166], hdR: [228, 216],
+               knL: [176, 258], anL: [172, 338], knR: [224, 258], anR: [228, 338] }) +
+        band([176, 250], [224, 250], 6) + tag(112, 318, 'ne spadnout')) }
+  ]
+},
+{
+  id: 'guma_rotace_ramen', nazev: 'Rozevírání předloktí s gumou', kat: 'rozhybani', blok: 1, vzdy: true, pohled: 'zpředu',
+  typ: 'opak', opak: { 1: 8, 2: 10, 3: 12 },
+  davka: { 1: '8 opakování', 2: '10 opakování', 3: '12 opakování' },
+  pomucky: ['žlutá guma', 'židle'],
+  kroky: [
+    'Sedni si vzpřímeně, ramena dole, lokty přitiskni k bokům.',
+    'Gumu chyť oběma rukama před břichem, dlaně vzhůru.',
+    'Lokty nechej přilepené u těla a rozevírej předloktí do stran.',
+    'Ramena netáhni k uším a trupem se nekruť — pohyb je jen v ramenních kloubech.',
+    'Pomalu vrať zpět.'
+  ],
+  pozor: 'Lokty musí zůstat u těla. Když se odlepí, dělá to rameno a ne to, co má.',
+  proc: 'Posílí svaly, které táhnou ramena zpět a otevírají hrudník. Vyrovnává předsunuté držení, které se po zlomeninách obratlů prohlubuje.',
+  faze: [
+    { popis: 'Lokty u těla, guma před břichem', svg: () => panel(FLOOR + ZIDLE_F +
+        figF({ head: [200, 84], sh: [200, 124], hip: [200, 224],
+               elL: [172, 176], hdL: [186, 208], elR: [228, 176], hdR: [214, 208],
+               knL: [176, 258], anL: [172, 338], knR: [224, 258], anR: [228, 338] }) +
+        band([186, 208], [214, 208], 4) + tag(104, 146, 'pohled zpředu')) },
+    { popis: 'Rozevři předloktí do stran', svg: () => panel(FLOOR + ZIDLE_F +
+        figF({ head: [200, 84], sh: [200, 124], hip: [200, 224], cue: true,
+               elL: [172, 176], hdL: [132, 200], elR: [228, 176], hdR: [268, 200],
+               knL: [176, 258], anL: [172, 338], knR: [224, 258], anR: [228, 338] }) +
+        band([132, 200], [268, 200], 18) + arrL(108, 176) + arrR(292, 176) +
+        tag(96, 318, 'lokty zůstávají u boků')) },
+    { popis: 'Pomalu vrať', svg: () => panel(FLOOR + ZIDLE_F +
+        figF({ head: [200, 84], sh: [200, 124], hip: [200, 224],
+               elL: [172, 176], hdL: [186, 208], elR: [228, 176], hdR: [214, 208],
+               knL: [176, 258], anL: [172, 338], knR: [224, 258], anR: [228, 338] }) +
+        band([186, 208], [214, 208], 4) + tag(112, 318, 'ramena dole')) }
+  ],
+  spatne: { popis: 'Lokty se odlepily od těla', svg: () => panel(FLOOR + ZIDLE_F +
+      figF({ bad: true, head: [200, 84], sh: [200, 124], hip: [200, 224],
+             elL: [146, 150], hdL: [116, 186], elR: [254, 150], hdR: [284, 186],
+             knL: [176, 258], anL: [172, 338], knR: [224, 258], anR: [228, 338] }) +
+      cross(300, 62) + tag(102, 318, 'lokty u těla', true), true) }
+},
+{
+  id: 'guma_kroky', nazev: 'Kroky do strany s gumou', kat: 'rovnovaha', blok: 1, vzdy: true, pohled: 'zpředu',
+  typ: 'opak', opak: { 1: 4, 2: 6, 3: 8 },
+  davka: { 1: '4 kroky každým směrem', 2: '6 kroků každým směrem', 3: '8 kroků každým směrem' },
+  pomucky: ['žlutá guma', 'kuchyňská linka'],
+  kroky: [
+    'Gumu několikrát obtoč kolem obou kotníků, aby byla lehce napnutá.',
+    'Postav se bokem k lince a jednou rukou se jí přidrž.',
+    'Kolena měj lehce pokrčená, trup vzpřímený.',
+    'Udělej malý krok stranou od linky, pak druhou nohu přisuň — ale ne úplně k sobě, guma má zůstat napnutá.',
+    'Ujdi pár kroků jedním směrem a pak zpátky. Ruka se drží po celou dobu.'
+  ],
+  pozor: 'Kroky malé a pomalé, nikdy bez opory na dosah. Když se guma přetáhne a švihne, ztratila bys rovnováhu.',
+  proc: 'Posílí boční hýžďové svaly přesně v pohybu, ve kterém se používají — a zároveň trénuje rovnováhu při chůzi do strany, což je situace, ve které lidé často padají.',
+  faze: [
+    { popis: 'Guma na kotnících, u linky', svg: () => panel(FLOOR + LINKA_FL +
+        figF({ head: [200, 70], sh: [200, 112], hip: [200, 216],
+               elL: [162, 158], hdL: [116, 210], elR: [238, 160], hdR: [252, 208],
+               knL: [182, 286], anL: [178, 344], knR: [220, 286], anR: [224, 344] }) +
+        band([178, 350], [224, 350], 8) + tag(104, 128, 'pohled zpředu')) },
+    { popis: 'Krok stranou od linky', svg: () => panel(FLOOR + LINKA_FL +
+        figF({ head: [204, 70], sh: [204, 112], hip: [204, 216], cue: true,
+               elL: [166, 158], hdL: [116, 210], elR: [242, 160], hdR: [256, 208],
+               knL: [184, 286], anL: [180, 344], knR: [248, 284], anR: [278, 344] }) +
+        band([180, 350], [278, 350], 16) + arrR(300, 300) +
+        tag(96, 128, 'malý krok, guma napnutá')) },
+    { popis: 'Přisuň druhou nohu', svg: () => panel(FLOOR + LINKA_FL +
+        figF({ head: [222, 70], sh: [222, 112], hip: [222, 216],
+               elL: [184, 158], hdL: [124, 210], elR: [260, 160], hdR: [274, 208],
+               knL: [212, 286], anL: [216, 344], knR: [250, 286], anR: [270, 344] }) +
+        band([216, 350], [270, 350], 10) + tag(88, 128, 'ne úplně k sobě')) }
+  ]
+},
+
 /* ---------- 20 ---------- */
 {
   id: 'tandem', nazev: 'Tandem chůze u linky', kat: 'rovnovaha', blok: 3,
@@ -1080,7 +1249,12 @@ const KOLA = {
   paty_odsun:     { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
   ctyri_ruka:     { strany: 2, serie: { 1: 1, 2: 1, 3: 1 }, slovo: 'strana' },
   prkno_linka:    { strany: 1, serie: { 1: 2, 2: 2, 3: 2 } },
-  dlan_koleno:    { strany: 2, serie: { 1: 1, 2: 1, 3: 1 }, slovo: 'strana' }
+  dlan_koleno:    { strany: 2, serie: { 1: 1, 2: 1, 3: 1 }, slovo: 'strana' },
+  guma_veslo:     { strany: 1, serie: { 1: 1, 2: 1, 3: 2 } },
+  guma_koleno:    { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
+  guma_kolena_ven:{ strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  guma_rotace_ramen:{ strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  guma_kroky:     { strany: 2, serie: { 1: 1, 2: 1, 3: 1 }, slovo: 'strana' }
 };
 
 /* přilepit ke cvikům, ať je to na jednom místě */
