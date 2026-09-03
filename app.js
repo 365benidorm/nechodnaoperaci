@@ -9,7 +9,7 @@ const KDO = "Máma";
 /* Označení verze. Až budeš něco měnit, přepiš datum — objeví se dole
    v Nastavení a posílá se s každým záznamem do Sheetu, takže na dálku
    poznáš, jestli mamce nová verze skutečně dojela. */
-const VERZE_APP = "2026-08-31";
+const VERZE_APP = "2026-09-03";
 
 /* stav automatické aktualizace — musí být deklarované dřív, než poprvé
    proběhne render(), jinak appka spadne na temporal dead zone */

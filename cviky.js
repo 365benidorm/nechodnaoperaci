@@ -28,7 +28,12 @@ const VIDEA = {
   brada:          "",
   koleno_vsede:   "",
   prenaseni_vahy: "",
-  hyzde_stisk:    ""
+  hyzde_stisk:    "",
+  bricho_vtazeni: "",
+  paty_odsun:     "",
+  ctyri_ruka:     "",
+  prkno_linka:    "",
+  dlan_koleno:    ""
 };
 
 /* ==========================================================================
@@ -843,6 +848,164 @@ const CVIKY = [
   ]
 },
 
+/* ---------- BŘICHO A STŘED TĚLA ----------
+   Cviky, které zapojí břicho bez ohýbání a rotace páteře. Žádné sedy-lehy
+   ani zvedání natažených nohou vleže — to jsou u prodělaných zlomenin
+   obratlů právě ty pohyby, které je způsobují. */
+{
+  id: 'bricho_vtazeni', nazev: 'Zatažení břicha vleže', kat: 'sila', blok: 1, vzdy: true,
+  typ: 'cas', cas: { 1: 45, 2: 60, 3: 60 },
+  davka: { 1: '45 vteřin', 2: '1 minuta', 3: '1 minuta' },
+  pomucky: ['podložka'],
+  kroky: [
+    'Lehni si na záda, kolena pokrč, chodidla opři o zem.',
+    'Polož si dlaně na podbřišek, kousek pod pupek.',
+    'Jemně vtáhni podbřišek dovnitř a dolů — jako bys chtěla zapnout těsné kalhoty.',
+    'Zapni tak na třetinu síly, ne naplno. Břicho se nesmí vyklenout ven.',
+    'Drž zatažené a přitom klidně dýchej. To je celý cvik — navenek se skoro nic neděje.'
+  ],
+  pozor: 'Nezvedej hlavu, netlač bedra do podložky a nezadržuj dech. Když nemůžeš mluvit, zapínáš moc silně.',
+  proc: 'Příčný břišní sval obepíná pas jako korzet a drží páteř zevnitř. Po zlomeninách obratlů obvykle přestane pracovat. Zpevněný pas i opticky zeštíhlí, protože přestane tlačit břicho dopředu.',
+  faze: [
+    { popis: 'Vleže, dlaně na podbřišku', svg: () => panel(FLOOR + MAT +
+        fig(cp(LEH, { kn: [304, 268], an: [318, 336], toe: [352, 340], el: [190, 330], hd: [226, 322] })) +
+        tag(112, 240, 'dlaně pod pupkem')) },
+    { popis: 'Jemně vtáhni podbřišek', svg: () => panel(FLOOR + MAT +
+        fig(cp(LEH, { kn: [304, 268], an: [318, 336], toe: [352, 340], el: [190, 330], hd: [226, 322], cue: true })) +
+        `<path class="f-dash" d="M206 316 Q 232 300 258 314"/>` + arrUp(232, 268) +
+        tag(96, 226, 'dovnitř, ne ven')) },
+    { popis: 'Drž a klidně dýchej', svg: () => panel(FLOOR + MAT +
+        fig(cp(LEH, { kn: [304, 268], an: [318, 336], toe: [352, 340], el: [190, 330], hd: [226, 322] })) +
+        tag(120, 240, 'musíš u toho mluvit')) }
+  ],
+  spatne: { popis: 'Zvednutá hlava a zadržený dech', svg: () => panel(FLOOR + MAT +
+      fig({ bad: true, hip: [248, 306], kn: [304, 268], an: [318, 336], toe: [352, 340],
+            sh: [154, 292], el: [186, 320], hd: [220, 314], head: [124, 268], curve: [186, 268] }) +
+      cross(300, 66) + tag(96, 236, 'tohle je sklapovačka', true), true) }
+},
+{
+  id: 'paty_odsun', nazev: 'Odsouvání paty vleže', kat: 'sila', blok: 1, vzdy: true,
+  typ: 'opak', opak: { 1: 8, 2: 10, 3: 12 },
+  davka: { 1: '8× každá noha', 2: '10× každá noha', 3: '12× každá noha' },
+  pomucky: ['podložka'],
+  kroky: [
+    'Lehni si na záda, kolena pokrč, chodidla opři o zem.',
+    'Nejdřív jemně zataj břicho, jako u předchozího cviku.',
+    'Pomalu odsouvej jednu patu po zemi, dokud není noha skoro natažená.',
+    'Bedra se přitom nesmí odlepit od podložky ani prohnout. To je celý smysl.',
+    'Přitáhni patu zpět a vyměň nohy.'
+  ],
+  pozor: 'Jakmile se bedra začnou prohýbat, jsi za svým rozsahem — odsuň patu jen tak daleko, kam to jde s klidnými zády. Pata jede po zemi, nezvedá se.',
+  proc: 'Učí břicho udržet páteř v klidu, zatímco se hýbou nohy. Přesně tohle břicho dělá při chůzi a při vstávání z postele.',
+  faze: [
+    { popis: 'Kolena pokrčená, břicho zatažené', svg: () => panel(FLOOR + MAT +
+        fig(cp(LEH, { kn: [304, 268], an: [318, 336], toe: [352, 340], el: [186, 330], hd: [220, 336] }))) },
+    { popis: 'Odsuň patu po zemi', svg: () => panel(FLOOR + MAT +
+        fig(cp(LEH, { kn: [312, 296], an: [352, 336], toe: [352, 314], el: [186, 330], hd: [220, 336], cue: true })) +
+        arrR(300, 240) + dash([150, 300], [250, 302]) + tag(84, 234, 'bedra zůstávají dole')) },
+    { popis: 'A pomalu zpět', svg: () => panel(FLOOR + MAT +
+        fig(cp(LEH, { kn: [304, 268], an: [318, 336], toe: [352, 340], el: [186, 330], hd: [220, 336] })) +
+        arrL(240, 240)) }
+  ],
+  spatne: { popis: 'Prohnutá bedra', svg: () => panel(FLOOR + MAT +
+      fig({ bad: true, hip: [248, 296], kn: [312, 296], an: [352, 336], toe: [352, 314],
+            sh: [150, 302], el: [186, 330], hd: [220, 336], head: [110, 298], curve: [200, 266] }) +
+      cross(300, 66) + tag(110, 234, 'záda se zvedla', true), true) }
+},
+{
+  id: 'ctyri_ruka', nazev: 'Na čtyřech — natažení ruky', kat: 'sila', blok: 1, vzdy: true,
+  typ: 'opak', opak: { 1: 6, 2: 8, 3: 10 },
+  davka: { 1: '6× každá ruka', 2: '8× každá ruka', 3: '10× každá ruka' },
+  pomucky: ['podložka'],
+  kroky: [
+    'Klekni si na čtyři. Dlaně pod rameny, kolena pod kyčlemi.',
+    'Nastav záda do rovné linky od kostrče po temeno a jemně zataj břicho.',
+    'Pomalu natáhni jednu paži dopředu, do výšky ramene.',
+    'Záda se přitom nesmí pohnout ani zaklonit — celý cvik je o tom, že se nic nehne.',
+    'Vydrž tři vteřiny, vrať ruku a vyměň strany.'
+  ],
+  pozor: 'Nezvedej ruku výš než rameno a nekruť trupem. Když se pánev naklápí do strany, ubírej rozsah.',
+  proc: 'Nejlepší cvik na hluboké zádové a břišní stabilizátory, jaký je k dispozici. Zatížení páteře je přitom minimální — proto se používá i po zlomeninách.',
+  faze: [
+    { popis: 'Na čtyřech, záda rovná', svg: () => panel(FLOOR + MAT +
+        fig({ hip: [278, 244], kn: [286, 336], an: [330, 340], toe: [356, 330],
+              sh: [154, 240], el: [148, 292], hd: [144, 336], head: [122, 232], cue: true }) +
+        dash([120, 226], [292, 246])) },
+    { popis: 'Natáhni ruku dopředu', svg: () => panel(FLOOR + MAT +
+        fig({ hip: [278, 244], kn: [286, 336], an: [330, 340], toe: [356, 330],
+              sh: [154, 240], el: [116, 236], hd: [66, 232], head: [126, 226], cue: true }) +
+        dash([120, 220], [292, 244]) + arrL(96, 288) + tag(120, 300, 'záda se nehnou')) },
+    { popis: 'Vydrž tři vteřiny a vrať', svg: () => panel(FLOOR + MAT +
+        fig({ hip: [278, 244], kn: [286, 336], an: [330, 340], toe: [356, 330],
+              sh: [154, 240], el: [148, 292], hd: [144, 336], head: [122, 232] }) +
+        tag(150, 300, 'pak druhá ruka')) }
+  ],
+  spatne: { popis: 'Prohnutá záda a zvednutá ruka', svg: () => panel(FLOOR + MAT +
+      fig({ bad: true, hip: [278, 250], kn: [286, 336], an: [330, 340], toe: [356, 330],
+            sh: [158, 238], el: [116, 208], hd: [70, 180], head: [130, 222], curve: [220, 276] }) +
+      cross(300, 62) + tag(120, 300, 'ruka moc vysoko', true), true) }
+},
+{
+  id: 'prkno_linka', nazev: 'Prkno o linku vestoje', kat: 'sila', blok: 1, vzdy: true,
+  typ: 'cas', cas: { 1: 20, 2: 30, 3: 40 },
+  davka: { 1: '2× 20 vteřin', 2: '2× 30 vteřin', 3: '2× 40 vteřin' },
+  pomucky: ['kuchyňská linka'],
+  kroky: [
+    'Postav se čelem k lince a opři se o ni předloktími, lokty na šířku ramen.',
+    'Odkroč nohama dozadu, dokud tělo netvoří šikmou rovnou linku od hlavy po paty.',
+    'Zataj břicho a stiskni hýždě. Bedra se nesmí prohnout a zadek nesmí vystrčit nahoru.',
+    'Hlavu drž v prodloužení páteře, pohled na desku linky.',
+    'Klidně dýchej a vydrž. Čím dál odkročíš, tím je to těžší.'
+  ],
+  pozor: 'Zůstaň jen tak daleko od linky, kde udržíš rovná záda. Když se bedra prohnou, přistup blíž — vždycky radši lehčí varianta než prohnutá záda.',
+  proc: 'Zapojí celé břicho i hýždě najednou. Vestoje o linku je zatížení páteře nesrovnatelně menší než u prkna na zemi, a přitom to funguje.',
+  faze: [
+    { popis: 'Předloktí na lince', svg: () => panel(FLOOR + LINKA_R +
+        fig(cp(STOJ, { hip: [246, 180], sh: [242, 86], el: [286, 150], hd: [318, 194], head: [241, 64] }))) },
+    { popis: 'Odkroč dozadu do šikmé linky', svg: () => panel(FLOOR + LINKA_R +
+        fig({ hip: [186, 230], kn: [152, 292], an: [122, 348], toe: [156, 352],
+              sh: [252, 148], el: [292, 168], hd: [322, 196], head: [274, 128], cue: true }) +
+        dash([278, 120], [128, 342]) + tag(60, 250, 'rovná linka')) },
+    { popis: 'Zataj břicho a hýždě, dýchej', svg: () => panel(FLOOR + LINKA_R +
+        fig({ hip: [186, 230], kn: [152, 292], an: [122, 348], toe: [156, 352],
+              sh: [252, 148], el: [292, 168], hd: [322, 196], head: [274, 128] }) +
+        tag(60, 250, 'zadek nevystrkovat')) }
+  ],
+  spatne: { popis: 'Prohnutá bedra, zadek nahoru', svg: () => panel(FLOOR + LINKA_R +
+      fig({ bad: true, hip: [196, 206], kn: [156, 280], an: [124, 348], toe: [158, 352],
+            sh: [254, 150], el: [294, 170], hd: [324, 198], head: [276, 130], curve: [214, 132] }) +
+      cross(58, 62) + tag(56, 254, 'záda se prohnula', true), true) }
+},
+{
+  id: 'dlan_koleno', nazev: 'Dlaň proti kolenu vsedě', kat: 'sila', blok: 1, vzdy: true,
+  typ: 'opak', opak: { 1: 6, 2: 8, 3: 10 },
+  davka: { 1: '6× každá strana', 2: '8× každá strana', 3: '10× každá strana' },
+  pomucky: ['židle'],
+  kroky: [
+    'Sedni si vzpřímeně na židli, obě chodidla na zemi.',
+    'Polož pravou dlaň na levé koleno, ruku nataženou přes tělo.',
+    'Zatlač dlaní do kolena a zároveň kolenem proti dlani, stejnou silou.',
+    'Nic se nesmí pohnout — trup zůstává vzpřímený a nekroutí se.',
+    'Drž pět vteřin, povol a vyměň strany.'
+  ],
+  pozor: 'Nezadržuj dech a nedovol, aby se trup otočil. Tlak roste pomalu, ne škubnutím.',
+  proc: 'Posílí šikmé břišní svaly na boku pasu, které se běžně trénují kroucením — a to je pro tebe zakázané. Takhle pracují, ale páteř zůstává v klidu.',
+  faze: [
+    { popis: 'Dlaň přes tělo na koleno', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { el: [214, 156], hd: [258, 202] })) + tag(96, 292, 'ruka přes tělo')) },
+    { popis: 'Tlač dlaní a kolenem proti sobě', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { el: [214, 156], hd: [258, 202], cue: true })) +
+        arrR(150, 178) + arrL(330, 232) + dash([190, 112], [195, 208]) +
+        tag(96, 292, 'nic se nepohne')) },
+    { popis: 'Drž pět vteřin a povol', svg: () => panel(FLOOR + CHAIR +
+        fig(cp(SED, { el: [214, 156], hd: [258, 202] })) + tag(110, 292, 'pak druhá strana')) }
+  ],
+  spatne: { popis: 'Trup se otočil za rukou', svg: () => panel(FLOOR + CHAIR +
+      fig(cp(SED, { bad: true, sh: [214, 126], el: [244, 168], hd: [274, 206],
+                    head: [220, 104], curve: [216, 160] })) +
+      cross(300, 66) + tag(96, 292, 'kroucení — ne', true), true) }
+},
+
 /* ---------- 20 ---------- */
 {
   id: 'tandem', nazev: 'Tandem chůze u linky', kat: 'rovnovaha', blok: 3,
@@ -912,7 +1075,12 @@ const KOLA = {
   brada:          { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
   koleno_vsede:   { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
   prenaseni_vahy: { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
-  hyzde_stisk:    { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } }
+  hyzde_stisk:    { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  bricho_vtazeni: { strany: 1, serie: { 1: 1, 2: 1, 3: 1 } },
+  paty_odsun:     { strany: 2, serie: { 1: 1, 2: 1, 3: 1 } },
+  ctyri_ruka:     { strany: 2, serie: { 1: 1, 2: 1, 3: 1 }, slovo: 'strana' },
+  prkno_linka:    { strany: 1, serie: { 1: 2, 2: 2, 3: 2 } },
+  dlan_koleno:    { strany: 2, serie: { 1: 1, 2: 1, 3: 1 }, slovo: 'strana' }
 };
 
 /* přilepit ke cvikům, ať je to na jednom místě */
