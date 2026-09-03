@@ -182,7 +182,7 @@ const CVIKY = [
     'Kolena pokrč, chodidla na zemi. Paže volně do stran, dlaně vzhůru.',
     'Jen lež a klidně dýchej. Ramena se sama rozevřou do stran.'
   ],
-  pozor: 'Váleček musí být podélně, ne napříč. Napříč vytvoří páku přes obratle — to nikdy.',
+  pozor: 'Váleček musí být podélně, ne napříč. Napříč vytvoří páku přes obratle — to nikdy. Když tě záda na válečku tlačí nebo bolí, sroluj ho tenčí nebo si místo něj dej složený ručník naplocho. Bolet to nesmí.',
   proc: 'Jemné otevření hrudníku v opačném směru, než jakým se páteř po zlomeninách hroutí. Nulové zatížení.',
   faze: [
     { popis: 'Sroluj ručník podélně', svg: () => panel(FLOOR + MAT + towel(200, 322, 240, 30) +
@@ -250,7 +250,7 @@ const CVIKY = [
     'Pomalu posuň pánev vzad, směrem k patám. Jdi jen tak daleko, dokud záda zůstávají rovná.',
     'Vrať se do výchozí polohy. Pomalu, bez švihu.'
   ],
-  pozor: 'Jakmile se záda začnou kulatit, jsi za svým rozsahem. Vrať se. Rozsah tady není cíl.',
+  pozor: 'Jakmile se záda začnou kulatit, jsi za svým rozsahem. Vrať se — rozsah tady není cíl. Když tě tlačí kolena, podlož si je složenou dekou. Jestli klek nejde vůbec, cvik dnes vynech a řekni o tom fyzioterapeutovi.',
   proc: 'Rozhýbe kyčle bez toho, aby se zapojila páteř. Právě proto se ta linka nesmí měnit.',
   faze: [
     { popis: 'Na čtyřech, záda rovná', svg: () => panel(FLOOR + MAT +
@@ -491,7 +491,7 @@ const CVIKY = [
     'Nahoře se úplně narovnej a propni kyčle.',
     'Zpátky sedej pomalu, počítej do tří. Pomalé sedání je půlka cvičení.'
   ],
-  pozor: 'Záda zůstávají rovná po celou dobu. Když to bez rukou nejde, opři se lehce o stehna — ne o židli za sebou.',
+  pozor: 'Záda zůstávají rovná po celou dobu. Dýchej plynule — při vstávání se nesmí zadržet dech. Když to bez rukou nejde, opři se lehce o stehna, ne o židli za sebou.',
   proc: 'Nejužitečnější silový cvik, jaký existuje. Trénuje přesně ten pohyb, který děláš denně desetkrát, a chrání před pádem.',
   faze: [
     { popis: 'Sed na kraji židle', svg: () => panel(FLOOR + CHAIR + fig(SED)) },
@@ -762,7 +762,7 @@ const CVIKY = [
     'Vydrž tři vteřiny a povol.',
     'Opakuj klidně, bez tlačení do bolesti.'
   ],
-  pozor: 'Hlava jde dozadu, ne dolů. Když ucítíš závrať nebo mravenčení do rukou, přestaň.',
+  pozor: 'Hlava jde dozadu, ne dolů. Během výdrže klidně dýchej, nezadržuj dech. Když ucítíš závrať nebo mravenčení do rukou, přestaň.',
   proc: 'Vyrovnává předsunuté držení hlavy, které se po zlomeninách obratlů prohlubuje a přetěžuje šíji.',
   faze: [
     { popis: 'Hlava předsunutá', svg: () => panel(FLOOR + CHAIR +
@@ -900,7 +900,7 @@ const CVIKY = [
     'Bedra se přitom nesmí odlepit od podložky ani prohnout. To je celý smysl.',
     'Přitáhni patu zpět a vyměň nohy.'
   ],
-  pozor: 'Jakmile se bedra začnou prohýbat, jsi za svým rozsahem — odsuň patu jen tak daleko, kam to jde s klidnými zády. Pata jede po zemi, nezvedá se.',
+  pozor: 'Jakmile se bedra začnou prohýbat, jsi za svým rozsahem — odsuň patu jen tak daleko, kam to jde s klidnými zády. Břicho drž zatažené, ale u toho normálně dýchej. Pata jede po zemi, nezvedá se.',
   proc: 'Učí břicho udržet páteř v klidu, zatímco se hýbou nohy. Přesně tohle břicho dělá při chůzi a při vstávání z postele.',
   faze: [
     { popis: 'Kolena pokrčená, břicho zatažené', svg: () => panel(FLOOR + MAT +
@@ -929,7 +929,7 @@ const CVIKY = [
     'Záda se přitom nesmí pohnout ani zaklonit — celý cvik je o tom, že se nic nehne.',
     'Vydrž tři vteřiny, vrať ruku a vyměň strany.'
   ],
-  pozor: 'Nezvedej ruku výš než rameno a nekruť trupem. Když se pánev naklápí do strany, ubírej rozsah.',
+  pozor: 'Nezvedej ruku výš než rameno a nekruť trupem. Během výdrže klidně dýchej, nezadržuj dech. Když se pánev naklápí do strany, ubírej rozsah. Bolí-li kolena, podlož si je dekou; jestli klek nejde, cvik vynech.',
   proc: 'Nejlepší cvik na hluboké zádové a břišní stabilizátory, jaký je k dispozici. Zatížení páteře je přitom minimální — proto se používá i po zlomeninách.',
   faze: [
     { popis: 'Na čtyřech, záda rovná', svg: () => panel(FLOOR + MAT +
@@ -962,7 +962,7 @@ const CVIKY = [
     'Hlavu drž v prodloužení páteře, pohled na desku linky.',
     'Klidně dýchej a vydrž. Čím dál odkročíš, tím je to těžší.'
   ],
-  pozor: 'Zůstaň jen tak daleko od linky, kde udržíš rovná záda. Když se bedra prohnou, přistup blíž — vždycky radši lehčí varianta než prohnutá záda.',
+  pozor: 'Opírej se jen o pevnou linku nebo parapet, nikdy o stůl, který se může posunout. Zůstaň jen tak daleko, kde udržíš rovná záda — když se bedra prohnou, přistup blíž. Vždycky radši lehčí varianta než prohnutá záda.',
   proc: 'Zapojí celé břicho i hýždě najednou. Vestoje o linku je zatížení páteře nesrovnatelně menší než u prkna na zemi, a přitom to funguje.',
   faze: [
     { popis: 'Předloktí na lince', svg: () => panel(FLOOR + LINKA_R +
@@ -1282,7 +1282,9 @@ const NEDELAT = [
   { co: 'Doskoky, poskoky, běh po schodech dolů',
     proc: 'Nárazy do páteře. Chůze ano, otřesy ne.' },
   { co: 'Cvičení se zadrženým dechem',
-    proc: 'Zvyšuje nitrobřišní a krevní tlak. Při každém cviku dýchej plynule.' }
+    proc: 'Zvyšuje nitrobřišní a krevní tlak. Při každém cviku dýchej plynule.' },
+  { co: 'Sesedat na zem a vstávat bez opory',
+    proc: 'Osm cviků se dělá na podložce. Na zem si sedej vždy přes židli nebo pevnou oporu a stejně tak vstávej — samotný přesun na zem a zpět je u tebe větší riziko pádu než cvičení samotné. Když to nejde bezpečně, dělej místo nich cviky vsedě a vestoje; těch je v programu většina.' }
 ];
 
 const VLAJKY = [
